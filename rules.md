@@ -12,6 +12,7 @@ You are an expert React Native (Expo) and TypeScript engineer specializing in hy
 - Do not create a global reusable component if it is only used once or twice across the app. Keep local, minor sub-views embedded inside the parent screen file or a local `components/` folder next to that specific screen.
 - Move components to the global `src/components/` directory ONLY when they are shared across multiple distinct feature modules (e.g., custom premium buttons, input boxes, generic modal containers).
 - Prioritize functional composition over deeply nested, over-parameterized components.
+- the naming convention should be readable and humanly.
 
 ## 3. High-Performance Splitting & Lazy Loading
 - Isolate heavy or secondary view states (such as complex filter drawers, custom onboarding sheets, reporting modals, or extensive bio expansions) into isolated components.
