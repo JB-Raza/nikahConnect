@@ -1,0 +1,88 @@
+export const colors = {
+  light: {
+    background: '#f6f8f7',
+    surface: '#ffffff',
+    surfaceElevated: '#ffffff',
+    textPrimary: '#17201c',
+    textSecondary: '#5d6b65',
+    primary: '#177245',
+    primaryPressed: '#0f5c37',
+    border: '#d7e2dc',
+    dot: '#b7c6bf',
+    textOnPrimary: '#ffffff',
+    overlay: 'rgba(23, 32, 28, 0.36)',
+    chipBackground: 'rgba(255, 255, 255, 0.9)',
+    tabBarBackground: '#ffffff',
+    tabBarBorder: '#d9e3de',
+    tabBarActive: '#177245',
+    tabBarInactive: '#7c8a84',
+    success: '#177245',
+    warning: '#b26c18',
+    danger: '#bb2f2f',
+    cardBorder: '#dfe8e3',
+    cardSurface: '#ffffff',
+    chipSurfaceSoft: '#eff5f1',
+  },
+  dark: {
+    background: '#09120e',
+    surface: '#102019',
+    surfaceElevated: '#152a21',
+    textPrimary: '#e7f0eb',
+    textSecondary: '#a3b5ad',
+    primary: '#36a66d',
+    primaryPressed: '#2e915f',
+    border: '#243b31',
+    dot: '#496157',
+    textOnPrimary: '#ffffff',
+    overlay: 'rgba(4, 10, 7, 0.42)',
+    chipBackground: 'rgba(16, 32, 25, 0.9)',
+    tabBarBackground: '#ffffff',
+    tabBarBorder: '#d9e3de',
+    tabBarActive: '#177245',
+    tabBarInactive: '#7c8a84',
+    success: '#177245',
+    warning: '#b26c18',
+    danger: '#bb2f2f',
+    cardBorder: '#dfe8e3',
+    cardSurface: '#ffffff',
+    chipSurfaceSoft: '#eff5f1',
+  },
+} as const;
+
+export const spacing = {
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
+} as const;
+
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  pill: 999,
+} as const;
+
+export const sizing = {
+  buttonHeight: 52,
+  mediaMinHeight: 280,
+  mediaMaxHeight: 430,
+  headerHeight: 56,
+  heroHeight: 430,
+  iconButtonSize: 40,
+  stickyActionHeight: 64,
+} as const;
+
+export const typography = {
+  title: 30,
+  titleMd: 22,
+  subtitle: 16,
+  body: 15,
+  button: 16,
+  caption: 13,
+  label: 12,
+} as const;

@@ -1,29 +1,20 @@
-import "../global.css";
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { Stack } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { FiltersProvider } from '@/features/filters/filters-context';
 
-import { getNavTheme, useColorScheme } from "@/theme";
-
-function RootStack() {
-  const { colorScheme } = useColorScheme();
-  const nav = getNavTheme(colorScheme);
-
+export default function RootLayout() {
   return (
-    <>
-      <StatusBar style={nav.statusBar} />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: nav.headerBg },
-          headerTintColor: nav.headerTint,
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: nav.contentBg },
-        }}
-      />
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <FiltersProvider>
+        <BottomSheetModalProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="filters" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="filter-option" options={{ presentation: 'card', animation: 'slide_from_right' }} />
+          </Stack>
+        </BottomSheetModalProvider>
+      </FiltersProvider>
+    </GestureHandlerRootView>
   );
-}
-
-export default function Layout() {
-  return <RootStack />;
 }
