@@ -97,7 +97,7 @@ export default function MenuTabScreen() {
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Menu</Text>
-        <Pressable hitSlop={10} style={styles.headerIcon} onPress={() => comingSoon('Settings')}>
+        <Pressable hitSlop={10} style={styles.headerIcon} onPress={() => router.push('/settings')}>
           <Ionicons name="settings-outline" size={22} color={palette.textPrimary} />
         </Pressable>
       </View>
@@ -132,7 +132,7 @@ export default function MenuTabScreen() {
           <View style={styles.completionCard}>
             <View style={styles.completionTextRow}>
               <Text style={styles.completionLabel}>Profile {completionPercent}% complete</Text>
-              <Pressable hitSlop={6} onPress={() => comingSoon('Complete profile')}>
+              <Pressable hitSlop={6} onPress={() => router.push('/edit-profile')}>
                 <Text style={styles.completionCta}>Complete</Text>
               </Pressable>
             </View>
@@ -168,8 +168,8 @@ export default function MenuTabScreen() {
         </MenuSection>
 
         <MenuSection title="Account">
-          <MenuRow icon="create-outline" label="Edit profile" onPress={() => comingSoon('Edit profile')} />
-          <MenuRow icon="mail-outline" label="Account settings" onPress={() => comingSoon('Account settings')} />
+          <MenuRow icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
+          <MenuRow icon="mail-outline" label="Account settings" onPress={() => router.push('/account-settings')} />
           <MenuRow
             icon="shield-checkmark-outline"
             label="Verification"
@@ -193,7 +193,7 @@ export default function MenuTabScreen() {
             value={hideFromSearch}
             onChange={setHideFromSearch}
           />
-          <MenuRow icon="ban-outline" label="Blocked users" onPress={() => comingSoon('Blocked users')} />
+          <MenuRow icon="ban-outline" label="Blocked users" onPress={() => router.push('/blocked-users')} />
         </MenuSection>
 
         <MenuSection title="Notifications">
@@ -205,15 +205,15 @@ export default function MenuTabScreen() {
           <MenuRow
             icon="options-outline"
             label="Notification preferences"
-            onPress={() => comingSoon('Notification preferences')}
+            onPress={() => router.push('/notification-preferences')}
           />
         </MenuSection>
 
         <MenuSection title="Support">
-          <MenuRow icon="help-circle-outline" label="Help & support" onPress={() => comingSoon('Help & support')} />
-          <MenuRow icon="people-outline" label="Community guidelines" onPress={() => comingSoon('Community guidelines')} />
-          <MenuRow icon="document-text-outline" label="Terms & Privacy" onPress={() => comingSoon('Terms & Privacy')} />
-          <MenuRow icon="information-circle-outline" label="About" value="v1.0.0" onPress={() => comingSoon('About')} />
+          <MenuRow icon="help-circle-outline" label="Help & support" onPress={() => router.push('/help')} />
+          <MenuRow icon="people-outline" label="Community guidelines" onPress={() => router.push('/guidelines')} />
+          <MenuRow icon="document-text-outline" label="Terms & Privacy" onPress={() => router.push('/legal')} />
+          <MenuRow icon="information-circle-outline" label="About" value="v1.0.0" onPress={() => router.push('/about')} />
         </MenuSection>
 
         <MenuSection title="Account actions">
