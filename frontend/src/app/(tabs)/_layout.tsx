@@ -1,8 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform, StyleSheet, View, type ColorValue } from 'react-native';
+import { useRef } from 'react';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ColorValue,
+  type GestureResponderEvent,
+} from 'react-native';
 
-import { colors, spacing, typography } from '@/theme/theme';
+import { colors, spacing } from '@/theme/theme';
 
 export default function TabsLayout() {
   const palette = colors.light;
@@ -34,6 +43,7 @@ export default function TabsLayout() {
         tabBarItemStyle: {
           paddingVertical: spacing.xxs,
         },
+        tabBarButton: (props) => <TabBarButton {...props} />,
       }}>
       <Tabs.Screen
         name="marriage"
@@ -75,6 +85,38 @@ export default function TabsLayout() {
   );
 }
 
+type TabBarButtonProps = {
+  children?: React.ReactNode;
+  style?: unknown;
+  onPressIn?: ((event: GestureResponderEvent) => void) | null;
+  onPressOut?: ((event: GestureResponderEvent) => void) | null;
+};
+
+function TabBarButton({ children, style, onPressIn, onPressOut, ...rest }: TabBarButtonProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (event: GestureResponderEvent) => {
+    Animated.spring(scale, { toValue: 0.82, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
+    onPressIn?.(event);
+  };
+
+  const handlePressOut = (event: GestureResponderEvent) => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
+    onPressOut?.(event);
+  };
+
+  return (
+    <Pressable
+      {...rest}
+      android_ripple={null}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[styles.tabButton, style as object]}>
+      <Animated.View style={[styles.tabButtonInner, { transform: [{ scale }] }]}>{children}</Animated.View>
+    </Pressable>
+  );
+}
+
 type TabIconProps = {
   focused: boolean;
   color: ColorValue;
@@ -90,6 +132,14 @@ function TabIcon({ focused, color, icon }: TabIconProps) {
 }
 
 const styles = StyleSheet.create({
+  tabButton: {
+    flex: 1,
+  },
+  tabButtonInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   iconWrap: {
     width: 32,
     height: 32,

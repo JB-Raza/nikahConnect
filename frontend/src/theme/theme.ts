@@ -22,6 +22,9 @@ export const colors = {
     cardBorder: '#dfe8e3',
     cardSurface: '#ffffff',
     chipSurfaceSoft: '#eff5f1',
+    premiumSurface: '#fbf3e6',
+    premiumBorder: '#eadcc2',
+    premiumAccent: '#b26c18',
   },
   dark: {
     background: '#09120e',
@@ -46,6 +49,9 @@ export const colors = {
     cardBorder: '#dfe8e3',
     cardSurface: '#ffffff',
     chipSurfaceSoft: '#eff5f1',
+    premiumSurface: '#1f2a16',
+    premiumBorder: '#3a4a26',
+    premiumAccent: '#d6a04a',
   },
 } as const;
 

@@ -16,7 +16,7 @@ type FilterButtonProps = {
  * Reusable trigger that opens the shared Filters screen and shows the
  * active-filter count. Drop into any screen header (Marriage, Explore, Menu, ...).
  */
-export function FilterButton({ label = 'Filter', style, onOpened }: FilterButtonProps) {
+export default function FilterButton({ label = 'Filter', style, onOpened }: FilterButtonProps) {
   const { activeCount, openFilters } = useProfileFilters();
 
   return (

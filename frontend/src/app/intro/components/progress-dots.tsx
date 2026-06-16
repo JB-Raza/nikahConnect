@@ -7,7 +7,7 @@ type ProgressDotsProps = {
   activeIndex: number;
 };
 
-export function ProgressDots({ total, activeIndex }: ProgressDotsProps) {
+export default function ProgressDots({ total, activeIndex }: ProgressDotsProps) {
   return (
     <View style={styles.row}>
       {Array.from({ length: total }).map((_, index) => {

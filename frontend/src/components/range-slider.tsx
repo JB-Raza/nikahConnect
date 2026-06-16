@@ -16,7 +16,7 @@ type RangeSliderProps = {
   onChange: (low: number, high: number) => void;
 };
 
-export function RangeSlider({ min, max, step = 1, low, high, onChange }: RangeSliderProps) {
+export default function RangeSlider({ min, max, step = 1, low, high, onChange }: RangeSliderProps) {
   const [trackWidth, setTrackWidth] = useState(0);
   const usable = Math.max(trackWidth - THUMB, 1);
 

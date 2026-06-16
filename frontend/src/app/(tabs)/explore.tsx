@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FilterButton } from '@/components/filter-button';
-import { ProfileCard } from '@/components/profile-card';
+import FilterButton from '@/components/filter-button';
+import ProfileCard from '@/components/profile-card';
 import {
   forYouSections,
   historyFilters,

@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IntroActions } from '@/app/intro/components/intro-actions';
-import { ProgressDots } from '@/app/intro/components/progress-dots';
+import IntroActions from '@/app/intro/components/intro-actions';
+import ProgressDots from '@/app/intro/components/progress-dots';
 import { introSlides } from '@/app/intro/slides';
 import { spacing, typography } from '@/theme/theme';
 
@@ -92,12 +92,7 @@ export default function IntroScreen() {
 
         <ProgressDots total={introSlides.length} activeIndex={activeIndex} />
 
-        <IntroActions
-          isLastSlide={isLastSlide}
-          onNext={handleNext}
-          onContinueGoogle={goToAuth}
-          onContinueEmail={goToAuth}
-        />
+        <IntroActions isLastSlide={isLastSlide} onNext={handleNext} onGetStarted={goToAuth} />
       </View>
     </View>
   );

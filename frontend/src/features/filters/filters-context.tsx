@@ -14,7 +14,7 @@ type FiltersContextValue = {
 
 const FiltersContext = createContext<FiltersContextValue | null>(null);
 
-export function FiltersProvider({ children }: { children: ReactNode }) {
+export default function FiltersProvider({ children }: { children: ReactNode }) {
   const [applied, setApplied] = useState<FilterValues>(buildDefaultValues);
   const [draft, setDraft] = useState<FilterValues>(buildDefaultValues);
 

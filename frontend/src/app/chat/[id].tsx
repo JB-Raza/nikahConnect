@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { VerifiedStar } from '@/components/profile-card';
+import VerifiedStar from '@/components/verified-star';
 import { getChatById, getChatThread, type ChatMessage } from '@/features/chat/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 

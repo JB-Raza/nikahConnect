@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
+import VerifiedStar from '@/components/verified-star';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -19,16 +20,7 @@ type ProfileCardProps = {
   onPress?: () => void;
 };
 
-export function VerifiedStar({ size = 14 }: { size?: number }) {
-  return (
-    <View style={[styles.verifiedStar, { width: size, height: size }]}>
-      <Ionicons name="star" size={size} color={palette.primary} style={StyleSheet.absoluteFill} />
-      <Ionicons name="checkmark" size={size * 0.6} color="#ffffff" />
-    </View>
-  );
-}
-
-export function ProfileCard({
+export default function ProfileCard({
   name,
   age,
   city,
@@ -92,10 +84,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     backgroundColor: palette.chipSurfaceSoft,
-  },
-  verifiedStar: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   onlinePill: {
     position: 'absolute',

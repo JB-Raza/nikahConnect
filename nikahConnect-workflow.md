@@ -490,3 +490,117 @@ Current implementation direction:
   - `reportProfile()`
 - All four actions call `showNextProfile()` after mutation.
 - `compliment` opens sheet; submit validates `>=10` chars before sending.
+
+---
+
+# App-Wide Build Order (Frontend Roadmap)
+
+## Current Status Snapshot
+
+| Screen | State |
+| --- | --- |
+| Intro (`index`) | Done |
+| Marriage tab | Done |
+| Explore tab | Done |
+| Chat list tab | Done |
+| Chat conversation (`chat/[id]`) | Done |
+| Filters + filter-option | Done |
+| Auth entry (`auth`) | Placeholder (skip buttons only) |
+| Menu tab | Empty placeholder |
+| Notifications | Stub |
+| Profile detail (`profile/[id]`) | Stub |
+
+Guiding principle: finish the **navigation shell first** (every tab and every already-linked destination should feel real), then build the **front door** (auth + setup), then **growth/premium** surfaces.
+
+---
+
+## Milestone 0 - Menu Tab (current focus, completes the tab bar)
+
+Goal: turn the empty Menu tab into a real settings hub. This is the last empty tab, so it unblocks the "every tab feels complete" milestone.
+
+Build in this sub-order:
+1. **Menu home** - header card (avatar, name, age, profile completion %), then grouped link rows.
+2. **Edit profile** - entry point (can reuse setup steps later; stub sections for now).
+3. **Account settings** - email, phone, password rows (stub actions).
+4. **Privacy** - blur photos, hide profile, hide online status, who can message (toggles).
+5. **Notification preferences** - per-type toggles.
+6. **Premium / Subscription** - entry row -> paywall (built in Milestone 4).
+7. **Blocked users** - list with unblock (empty state first).
+8. **Help & support / Community guidelines / About / Legal** - static content screens.
+9. **Logout / Delete account** - confirmation modals.
+
+Routes: `src/app/menu/*` (e.g. `menu/settings`, `menu/privacy`, `menu/account`, `menu/blocked`).
+Reusable pieces: `SettingsRow`, `SettingsSection`, `ToggleRow`, `CompletionMeter`.
+
+Acceptance: Menu home renders rich content, every row navigates somewhere real (even if the destination is a simple stub), back navigation is robust via `canGoBack` guard.
+
+---
+
+## Milestone 1 - Profile Detail (`profile/[id]`)
+
+Goal: replace the stub. It is already linked from Explore cards and Chat headers, so it is the highest-impact dead link.
+
+- Reuse the Marriage profile layout (hero carousel, identity overlay, chips, section cards) in a read-only mode (no sticky pass/like decision bar; instead show contextual actions: Like, Compliment, Share, Report/Block).
+- Drive from shared profile view-model + mock data.
+- Add "view as others see me" variant for own profile (used later by Menu > Edit profile preview).
+
+---
+
+## Milestone 2 - Notifications
+
+Goal: replace the stub (already linked from Marriage header).
+
+- Sectioned list: New matches, Messages, Profile views, Verification, Subscription.
+- Row types with icon, avatar, title, timestamp, unread dot.
+- Empty state + "mark all read".
+- Tapping a row routes to the relevant screen (match -> profile, message -> chat).
+
+---
+
+## Milestone 3 - Auth + Profile Setup (the front door)
+
+Goal: upgrade the placeholder `auth.tsx` into a real flow, then the post-signup setup wizard.
+
+Auth sub-order:
+1. Welcome / choose method (upgrade existing).
+2. Email sign up + Email login.
+3. Phone entry -> OTP verification.
+4. Forgot password -> reset.
+
+Profile setup wizard (multi-step, progress bar + completion %):
+- Gender / looking for -> name & DOB -> location -> photos -> religious level + sect -> education & profession -> height, marital status, children -> languages & ethnicity -> interests -> bio -> marriage timeline & future plans -> summary.
+
+Routes: `src/app/auth/*`, `src/app/onboarding/*`. Shared `WizardStep`, `ProgressBar`, `ChoiceChips`, `PhotoUploader` (stub picker).
+
+---
+
+## Milestone 4 - Matches, Likes & Premium
+
+Goal: the conversion/growth surfaces.
+
+- **Likes you / See who liked you** - grid, premium-gated blur.
+- **It's a Match!** celebration modal/screen.
+- **Match history / list**.
+- **Premium paywall** - plans (monthly/yearly), benefits list, CTA.
+- **Checkout** - Stripe stub UI.
+- **Boost profile** - modal triggered by the Marriage header Boost button.
+
+---
+
+## Milestone 5 - Safety, Verification & Polish
+
+- **Report user** flow (reason picker + confirmation).
+- **Profile verification** (selfie submission + status states).
+- **Chat extras** - image/voice-note message UI stubs, message reactions, block/report inside chat.
+- **System states** - global loading/splash, error, no-connection.
+- **Dark mode** pass across all screens (tokens already exist).
+
+---
+
+## Cross-Cutting Conventions (apply to every new screen)
+
+- Robust back: `router.canGoBack() ? router.back() : router.replace(<sensible fallback>)`.
+- Feature-local components first; promote to `src/components` only when reused.
+- Mock data lives in `src/features/<feature>/data.ts` with typed view-models.
+- Every list has a designed empty state.
+- Touch targets >= 44x44; token-based colors/spacing/typography only.

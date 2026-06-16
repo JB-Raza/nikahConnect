@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RangeSlider } from '@/components/range-slider';
+import RangeSlider from '@/components/range-slider';
 import {
   AGE_MAX,
   AGE_MIN,

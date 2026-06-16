@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { VerifiedStar } from '@/components/profile-card';
+import VerifiedStar from '@/components/verified-star';
 import { chatFilters, chats, filterChats, type ChatFilterId, type ChatItem } from '@/features/chat/data';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
