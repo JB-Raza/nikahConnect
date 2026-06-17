@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Image,
   KeyboardAvoidingView,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAlert } from '@/features/alerts/alert-provider';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -80,6 +80,7 @@ function computeAge({ day, month, year }: Dob): number | null {
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<OnboardingForm>({
@@ -166,7 +167,11 @@ export default function OnboardingScreen() {
   const captureFromCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Enable camera access for NikahConnect in Settings to take a photo.');
+      showAlert({
+        type: 'warning',
+        title: 'Camera access needed',
+        message: 'Enable camera access for NikahConnect in Settings to take a photo.',
+      });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
@@ -178,7 +183,11 @@ export default function OnboardingScreen() {
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Photos access needed', 'Enable photo access for NikahConnect in Settings to add a picture.');
+      showAlert({
+        type: 'warning',
+        title: 'Photos access needed',
+        message: 'Enable photo access for NikahConnect in Settings to add a picture.',
+      });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -193,17 +202,30 @@ export default function OnboardingScreen() {
   };
 
   const addPhoto = () =>
-    Alert.alert('Add a photo', 'Choose where to get your photo from.', [
-      { text: 'Take a photo', onPress: captureFromCamera },
-      { text: 'Choose from gallery', onPress: pickFromGallery },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    showAlert({
+      title: 'Add a photo',
+      message: 'Choose where to get your photo from.',
+      buttons: [
+        { text: 'Take a photo', onPress: captureFromCamera },
+        { text: 'Choose from gallery', onPress: pickFromGallery },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    });
 
   const removePhoto = (uri: string) =>
-    Alert.alert('Remove photo', 'Remove this photo from your profile?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => update('photos', form.photos.filter((item) => item !== uri)) },
-    ]);
+    showAlert({
+      type: 'warning',
+      title: 'Remove photo',
+      message: 'Remove this photo from your profile?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => update('photos', form.photos.filter((item) => item !== uri)),
+        },
+      ],
+    });
 
   const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 

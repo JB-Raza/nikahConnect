@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import VerifiedStar from '@/components/verified-star';
+import { useAlert } from '@/features/alerts/alert-provider';
 import { currentUser } from '@/features/menu/data';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
@@ -26,18 +26,24 @@ const AVATAR_SIZE = 96;
 export default function MenuTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { showAlert, showToast } = useAlert();
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
   const [blurPhotos, setBlurPhotos] = useState(false);
   const [hideFromSearch, setHideFromSearch] = useState(false);
+  const [whoCanMessage, setWhoCanMessage] = useState('Everyone');
 
   const avatarSource: ImageSourcePropType = avatarUri ? { uri: avatarUri } : currentUser.photo;
 
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Enable camera access for NikahConnect in Settings to take a photo.');
+      showAlert({
+        type: 'warning',
+        title: 'Camera access needed',
+        message: 'Enable camera access for NikahConnect in Settings to take a photo.',
+      });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -54,7 +60,11 @@ export default function MenuTabScreen() {
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Photos access needed', 'Enable photo access for NikahConnect in Settings to choose a picture.');
+      showAlert({
+        type: 'warning',
+        title: 'Photos access needed',
+        message: 'Enable photo access for NikahConnect in Settings to choose a picture.',
+      });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -69,27 +79,52 @@ export default function MenuTabScreen() {
   };
 
   const changePhoto = () => {
-    Alert.alert('Update profile photo', 'Choose where to get your new picture from.', [
-      { text: 'Take a photo', onPress: takePhoto },
-      { text: 'Choose from gallery', onPress: pickFromGallery },
-      ...(avatarUri ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setAvatarUri(null) }] : []),
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
+    showAlert({
+      title: 'Update profile photo',
+      message: 'Choose where to get your new picture from.',
+      buttons: [
+        { text: 'Take a photo', onPress: takePhoto },
+        { text: 'Choose from gallery', onPress: pickFromGallery },
+        ...(avatarUri ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setAvatarUri(null) }] : []),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    });
   };
 
-  const comingSoon = (label: string) => Alert.alert(label, 'This screen is coming soon.');
+  const comingSoon = (label: string) => showToast({ type: 'info', message: `${label} is coming soon.` });
+
+  const chooseWhoCanMessage = () =>
+    showAlert({
+      title: 'Who can message me',
+      buttons: [
+        { text: 'Everyone', onPress: () => setWhoCanMessage('Everyone') },
+        { text: 'Matches only', onPress: () => setWhoCanMessage('Matches only') },
+        { text: 'Verified members', onPress: () => setWhoCanMessage('Verified members') },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    });
 
   const confirmLogout = () =>
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => router.replace('/') },
-    ]);
+    showAlert({
+      type: 'warning',
+      title: 'Log out',
+      message: 'Are you sure you want to log out?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: () => router.replace('/') },
+      ],
+    });
 
   const confirmDelete = () =>
-    Alert.alert('Delete account', 'This permanently removes your profile and matches. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => router.replace('/') },
-    ]);
+    showAlert({
+      type: 'error',
+      title: 'Delete account',
+      message: 'This permanently removes your profile and matches. This cannot be undone.',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => router.replace('/') },
+      ],
+    });
 
   const completionPercent = Math.round(currentUser.completion * 100);
 
@@ -192,6 +227,12 @@ export default function MenuTabScreen() {
             label="Hide profile from search"
             value={hideFromSearch}
             onChange={setHideFromSearch}
+          />
+          <MenuRow
+            icon="chatbubble-ellipses-outline"
+            label="Who can message me"
+            value={whoCanMessage}
+            onPress={chooseWhoCanMessage}
           />
           <MenuRow icon="ban-outline" label="Blocked users" onPress={() => router.push('/blocked-users')} />
         </MenuSection>

@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import CompatibilityBar from '@/components/compatibility-bar';
 import FilterButton from '@/components/filter-button';
 import { useProfileFilters } from '@/features/filters/use-profile-filters';
 import { profiles as mockProfiles } from '@/features/profiles/data';
@@ -232,6 +233,7 @@ export default function MarriageTabScreen() {
         </View>
 
         <Section title="Your Similarities">
+          <CompatibilityBar score={currentProfile.compatibility} />
           {currentProfile.similarities.map((item) => (
             <BulletLine key={item} text={item} />
           ))}

@@ -66,15 +66,19 @@ export default function LoginScreen() {
         <Text style={styles.forgotText}>Forgot password?</Text>
       </Pressable>
 
-      <View>
+      <View style={styles.socialStack}>
         <OrDivider />
         <SocialButton label="Continue with Google" icon="logo-google" onPress={() => router.replace('/(tabs)/marriage')} />
+        <SocialButton label="Continue with Apple" icon="logo-apple" onPress={() => router.replace('/(tabs)/marriage')} />
       </View>
     </AuthScaffold>
   );
 }
 
 const styles = StyleSheet.create({
+  socialStack: {
+    gap: spacing.sm,
+  },
   forgotRow: {
     alignSelf: 'flex-end',
     marginTop: -spacing.xs,

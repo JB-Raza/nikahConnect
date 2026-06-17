@@ -1,21 +1,25 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 import { SettingsRow, SettingsScaffold, SettingsSection } from '@/components/settings-kit';
+import { useAlert } from '@/features/alerts/alert-provider';
 
 const LANGUAGES = ['English', 'اردو (Urdu)', 'العربية (Arabic)', 'Türkçe (Turkish)', 'Bahasa (Malay)'];
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const [language, setLanguage] = useState('English');
   const [units, setUnits] = useState<'km' | 'mi'>('km');
 
   const chooseLanguage = () =>
-    Alert.alert('App language', undefined, [
-      ...LANGUAGES.map((lang) => ({ text: lang, onPress: () => setLanguage(lang) })),
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
+    showAlert({
+      title: 'App language',
+      buttons: [
+        ...LANGUAGES.map((lang) => ({ text: lang, onPress: () => setLanguage(lang) })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    });
 
   return (
     <SettingsScaffold title="Settings">

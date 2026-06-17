@@ -39,6 +39,7 @@ export default function AuthWelcomeScreen() {
           <PrimaryButton label="Create account" icon="mail-outline" onPress={() => router.push('/auth/sign-up')} />
 
           <SocialButton label="Continue with Google" icon="logo-google" onPress={() => router.replace('/onboarding')} />
+          <SocialButton label="Continue with Apple" icon="logo-apple" onPress={() => router.replace('/onboarding')} />
           <SocialButton label="Continue with phone" icon="call-outline" onPress={() => router.push('/auth/phone')} />
 
           <OrDivider />

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 
 import { SettingsScaffold, settingsPalette } from '@/components/settings-kit';
+import { useAlert } from '@/features/alerts/alert-provider';
 import { currentUser } from '@/features/menu/data';
 import { radius, spacing, typography } from '@/theme/theme';
 
@@ -24,6 +24,7 @@ const INTEREST_POOL = ['Reading', 'Travel', 'Cooking', 'Fitness', 'Volunteering'
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { showAlert, showToast } = useAlert();
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [name, setName] = useState(currentUser.name);
@@ -37,17 +38,25 @@ export default function EditProfileScreen() {
   const avatarSource: ImageSourcePropType = avatarUri ? { uri: avatarUri } : currentUser.photo;
 
   const changePhoto = () => {
-    Alert.alert('Update profile photo', 'Choose where to get your new picture from.', [
-      { text: 'Take a photo', onPress: takePhoto },
-      { text: 'Choose from gallery', onPress: pickFromGallery },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    showAlert({
+      title: 'Update profile photo',
+      message: 'Choose where to get your new picture from.',
+      buttons: [
+        { text: 'Take a photo', onPress: takePhoto },
+        { text: 'Choose from gallery', onPress: pickFromGallery },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    });
   };
 
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Enable camera access for NikahConnect in Settings to take a photo.');
+      showAlert({
+        type: 'warning',
+        title: 'Camera access needed',
+        message: 'Enable camera access for NikahConnect in Settings to take a photo.',
+      });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
@@ -59,7 +68,11 @@ export default function EditProfileScreen() {
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Photos access needed', 'Enable photo access for NikahConnect in Settings to choose a picture.');
+      showAlert({
+        type: 'warning',
+        title: 'Photos access needed',
+        message: 'Enable photo access for NikahConnect in Settings to choose a picture.',
+      });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
@@ -75,10 +88,11 @@ export default function EditProfileScreen() {
 
   const save = () => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter your name.');
+      showToast({ type: 'error', message: 'Please enter your name.' });
       return;
     }
-    Alert.alert('Profile saved', 'Your changes have been updated.', [{ text: 'Done', onPress: () => router.back() }]);
+    showToast({ type: 'success', message: 'Profile saved.' });
+    router.back();
   };
 
   return (

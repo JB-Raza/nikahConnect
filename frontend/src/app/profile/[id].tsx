@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -18,6 +17,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import CompatibilityBar from '@/components/compatibility-bar';
+import { useAlert } from '@/features/alerts/alert-provider';
 import { getProfileById } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
@@ -27,6 +28,7 @@ const MIN_COMPLIMENT_LENGTH = 10;
 export default function ProfileDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showAlert, showToast } = useAlert();
   const { width, height } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -65,7 +67,7 @@ export default function ProfileDetailScreen() {
     }
     complimentSheetRef.current?.dismiss();
     setComposerText('');
-    Alert.alert('Compliment sent', `Your compliment to ${profile.name} has been sent.`);
+    showToast({ type: 'success', message: `Your compliment to ${profile.name} has been sent.` });
   };
 
   const handleShare = async () => {
@@ -77,16 +79,26 @@ export default function ProfileDetailScreen() {
   };
 
   const confirmBlock = () =>
-    Alert.alert('Block user', `Block ${profile.name}? They won't be able to see your profile or message you.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Block', style: 'destructive', onPress: dismiss },
-    ]);
+    showAlert({
+      type: 'warning',
+      title: 'Block user',
+      message: `Block ${profile.name}? They won't be able to see your profile or message you.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: dismiss },
+      ],
+    });
 
   const confirmReport = () =>
-    Alert.alert('Report user', `Report ${profile.name} for review by our safety team?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: dismiss },
-    ]);
+    showAlert({
+      type: 'warning',
+      title: 'Report user',
+      message: `Report ${profile.name} for review by our safety team?`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Report', style: 'destructive', onPress: dismiss },
+      ],
+    });
 
   return (
     <View style={styles.screen}>
@@ -153,6 +165,7 @@ export default function ProfileDetailScreen() {
         </View>
 
         <Section title="Your Similarities">
+          <CompatibilityBar score={profile.compatibility} />
           {profile.similarities.map((item) => (
             <BulletLine key={item} text={item} />
           ))}

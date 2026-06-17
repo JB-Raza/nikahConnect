@@ -1,26 +1,37 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 import { SettingsRow, SettingsScaffold, SettingsSection, SettingsToggle } from '@/components/settings-kit';
+import { useAlert } from '@/features/alerts/alert-provider';
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
+  const { showAlert, showToast } = useAlert();
   const [pauseAccount, setPauseAccount] = useState(false);
 
-  const comingSoon = (label: string) => Alert.alert(label, 'This option will be available soon.');
+  const comingSoon = (label: string) => showToast({ type: 'info', message: `${label} is coming soon.` });
 
   const confirmLogout = () =>
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => router.replace('/') },
-    ]);
+    showAlert({
+      type: 'warning',
+      title: 'Log out',
+      message: 'Are you sure you want to log out?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: () => router.replace('/') },
+      ],
+    });
 
   const confirmDelete = () =>
-    Alert.alert('Delete account', 'This permanently removes your profile and matches. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => router.replace('/') },
-    ]);
+    showAlert({
+      type: 'error',
+      title: 'Delete account',
+      message: 'This permanently removes your profile and matches. This cannot be undone.',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => router.replace('/') },
+      ],
+    });
 
   return (
     <SettingsScaffold title="Account settings">

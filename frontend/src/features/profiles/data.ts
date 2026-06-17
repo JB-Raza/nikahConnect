@@ -11,6 +11,7 @@ export type Profile = {
   name: string;
   age: number;
   isVerified: boolean;
+  compatibility: number;
   photos: ImageSourcePropType[];
   country: string;
   city: string;
@@ -50,6 +51,7 @@ export const profiles: Profile[] = [
     name: 'Ayesha',
     age: 27,
     isVerified: true,
+    compatibility: 92,
     photos: [photo1, photo2, photo3],
     country: 'Pakistan',
     city: 'Lahore',
@@ -87,6 +89,7 @@ export const profiles: Profile[] = [
     name: 'Mariam',
     age: 25,
     isVerified: true,
+    compatibility: 88,
     photos: [photo2, photo3, photo1],
     country: 'United Arab Emirates',
     city: 'Dubai',
@@ -120,6 +123,7 @@ export const profiles: Profile[] = [
     name: 'Noor',
     age: 29,
     isVerified: false,
+    compatibility: 79,
     photos: [photo3, photo1, photo2],
     country: 'Saudi Arabia',
     city: 'Riyadh',
