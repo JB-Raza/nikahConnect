@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import VerifiedStar from '@/components/verified-star';
+import { useAlert } from '@/features/alerts/alert-provider';
 import { getChatById, getChatThread, type ChatMessage } from '@/features/chat/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
@@ -23,6 +24,7 @@ const palette = colors.light;
 export default function ChatThreadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const dismiss = () => {
@@ -64,6 +66,29 @@ export default function ChatThreadScreen() {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   };
 
+  const confirmBlock = () =>
+    showAlert({
+      type: 'warning',
+      title: 'Block user',
+      message: `Block ${chat.name}? They won't be able to see your profile or message you.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: dismiss },
+      ],
+    });
+
+  const openMenu = () =>
+    showAlert({
+      title: chat.name,
+      message: 'What would you like to do?',
+      buttons: [
+        { text: 'View profile', onPress: () => router.push(`/profile/${chat.id}`) },
+        { text: 'Block user', style: 'destructive', onPress: confirmBlock },
+        { text: 'Report user', onPress: () => router.push({ pathname: '/report', params: { name: chat.name } }) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    });
+
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
@@ -87,7 +112,7 @@ export default function ChatThreadScreen() {
           </View>
         </Pressable>
 
-        <Pressable hitSlop={10} style={styles.headerAction}>
+        <Pressable hitSlop={10} style={styles.headerAction} onPress={openMenu} accessibilityLabel="Chat options">
           <Ionicons name="ellipsis-vertical" size={20} color={palette.textPrimary} />
         </Pressable>
       </View>

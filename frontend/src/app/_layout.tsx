@@ -31,6 +31,7 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen name="premium/checkout" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="report" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="boost" options={{ presentation: 'transparentModal', animation: 'fade' }} />
                 <Stack.Screen name="match/[id]" options={{ presentation: 'transparentModal', animation: 'fade' }} />
               </Stack>

@@ -89,16 +89,7 @@ export default function ProfileDetailScreen() {
       ],
     });
 
-  const confirmReport = () =>
-    showAlert({
-      type: 'warning',
-      title: 'Report user',
-      message: `Report ${profile.name} for review by our safety team?`,
-      buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Report', style: 'destructive', onPress: dismiss },
-      ],
-    });
+  const openReport = () => router.push({ pathname: '/report', params: { name: profile.name } });
 
   return (
     <View style={styles.screen}>
@@ -236,7 +227,7 @@ export default function ProfileDetailScreen() {
               onPress={() => setFavorited((value) => !value)}
             />
             <FooterAction label="Block user" icon="ban-outline" onPress={confirmBlock} />
-            <FooterAction label="Report user" icon="flag-outline" onPress={confirmReport} />
+            <FooterAction label="Report user" icon="flag-outline" onPress={openReport} />
           </View>
         </Section>
       </ScrollView>

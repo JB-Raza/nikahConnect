@@ -23,9 +23,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
 import FilterButton from '@/components/filter-button';
+import { useAlert } from '@/features/alerts/alert-provider';
 import { useProfileFilters } from '@/features/filters/use-profile-filters';
 import { profiles as mockProfiles } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+
+const SUPER_LIKE_COLOR = '#2f9bed';
 
 const SORT_OPTIONS = [
   "I'm in all their filters",
@@ -42,6 +45,7 @@ export default function MarriageTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  const { showAlert, showToast } = useAlert();
 
   const { filter: filterProfiles, activeCount, clearAllFilters } = useProfileFilters();
 
@@ -108,8 +112,35 @@ export default function MarriageTabScreen() {
 
   const handlePass = () => consumeCurrentProfile();
   const handleLike = () => consumeCurrentProfile();
-  const handleBlock = () => consumeCurrentProfile();
-  const handleReport = () => consumeCurrentProfile();
+
+  const handleSuperLike = () => {
+    const name = currentProfile?.name;
+    consumeCurrentProfile();
+    showToast({ type: 'success', message: name ? `You super liked ${name}.` : 'Super like sent.' });
+  };
+
+  const handleBlock = () => {
+    if (!currentProfile) {
+      return;
+    }
+    const name = currentProfile.name;
+    showAlert({
+      type: 'warning',
+      title: 'Block user',
+      message: `Block ${name}? They won't be able to see your profile or message you.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: consumeCurrentProfile },
+      ],
+    });
+  };
+
+  const handleReport = () => {
+    if (!currentProfile) {
+      return;
+    }
+    router.push({ pathname: '/report', params: { name: currentProfile.name } });
+  };
 
   const handleSendCompliment = () => {
     if (!complimentIsValid) {
@@ -318,13 +349,14 @@ export default function MarriageTabScreen() {
       </ScrollView>
 
       <View style={[styles.stickyActions, { bottom: stickyBottomOffset }]} pointerEvents="box-none">
-        <CircleAction icon="close" backgroundColor="#ffffff" iconColor={palette.danger} size={58} onPress={handlePass} />
-        <CircleAction icon="checkmark" backgroundColor={palette.success} iconColor="#ffffff" size={66} onPress={handleLike} />
+        <CircleAction icon="close" backgroundColor="#ffffff" iconColor={palette.danger} size={54} onPress={handlePass} />
+        <CircleAction icon="star" backgroundColor="#ffffff" iconColor={SUPER_LIKE_COLOR} size={54} onPress={handleSuperLike} />
+        <CircleAction icon="checkmark" backgroundColor={palette.success} iconColor="#ffffff" size={64} onPress={handleLike} />
         <CircleAction
           icon="sparkles"
           backgroundColor={palette.warning}
           iconColor="#ffffff"
-          size={58}
+          size={54}
           onPress={() => {
             setComposerText(inlineCompliment);
             openComplimentSheet();
@@ -782,7 +814,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xl,
+    gap: spacing.lg,
     zIndex: 40,
   },
   circleAction: {

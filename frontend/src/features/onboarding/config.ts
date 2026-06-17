@@ -14,10 +14,14 @@ export type OnboardingForm = {
   city: string;
   country: string;
   address: string;
+  height: string | null;
   profession: string | null;
   education: string | null;
   nationalities: string[];
   ethnicities: string[];
+  languages: string[];
+  sect: string | null;
+  familyBackground: string | null;
   maritalStatus: string | null;
   knowFor: string | null;
   marriedWithin: string | null;
@@ -73,6 +77,7 @@ export const MAX_AGE = 99;
 export const MAX_NATIONALITIES = 2;
 export const MAX_PERSONALITY = 5;
 export const MIN_INTERESTS = 3;
+export const MIN_LANGUAGES = 1;
 
 const toOptions = (labels: string[]): Option[] => labels.map((label) => ({ value: label, label }));
 
@@ -130,6 +135,24 @@ const ETHNICITIES = toOptions([
   'Arab', 'Berber', 'Kurdish', 'Persian', 'Turkish', 'Somali', 'Malay', 'Indonesian', 'African', 'Mixed', 'Other',
 ]);
 
+const HEIGHTS = toOptions([
+  '4\'8" (142 cm)', '4\'9" (145 cm)', '4\'10" (147 cm)', '4\'11" (150 cm)', '5\'0" (152 cm)', '5\'1" (155 cm)',
+  '5\'2" (157 cm)', '5\'3" (160 cm)', '5\'4" (163 cm)', '5\'5" (165 cm)', '5\'6" (168 cm)', '5\'7" (170 cm)',
+  '5\'8" (173 cm)', '5\'9" (175 cm)', '5\'10" (178 cm)', '5\'11" (180 cm)', '6\'0" (183 cm)', '6\'1" (185 cm)',
+  '6\'2" (188 cm)', '6\'3" (191 cm)', '6\'4" (193 cm)', '6\'5" (196 cm)',
+]);
+
+const LANGUAGES = toOptions([
+  'Urdu', 'English', 'Arabic', 'Punjabi', 'Pashto', 'Sindhi', 'Saraiki', 'Balochi', 'Hindi', 'Bengali', 'Gujarati',
+  'Turkish', 'Persian', 'Kurdish', 'French', 'German', 'Spanish', 'Malay', 'Indonesian', 'Somali', 'Other',
+]);
+
+const SECT = toOptions(['Sunni', 'Shia', 'Sufi', 'Just Muslim', 'Other', 'Prefer not to say']);
+
+const FAMILY_BACKGROUND = toOptions([
+  'Close-knit family', 'Joint / extended family', 'Nuclear family', 'Living independently', 'Prefer not to say',
+]);
+
 const MARITAL = toOptions(['Never married', 'Divorced', 'Separated', 'Annulled', 'Widowed', 'Married']);
 
 const KNOW_FOR = toOptions(['1-2 months', '3-4 months', '4-12 months', '1-2 years']);
@@ -169,6 +192,10 @@ export const STEPS: Step[] = [
   { key: 'name', kind: 'name', title: "What's your name?", subtitle: 'This is how you’ll appear on NikahConnect.' },
   { key: 'gender', kind: 'gender', title: 'Your gender', subtitle: 'Select your gender.' },
   { key: 'dob', kind: 'dob', title: 'Your date of birth', subtitle: 'Your age is shown on your profile, your date of birth is not.' },
+  {
+    key: 'height', kind: 'select', field: 'height', title: "What's your height?",
+    searchable: true, searchPlaceholder: 'Search height', options: HEIGHTS,
+  },
   { key: 'location', kind: 'location', title: 'Where do you live?', subtitle: 'We use this to show you nearby matches.' },
   {
     key: 'profession', kind: 'select', field: 'profession', title: "What's your profession?",
@@ -186,6 +213,10 @@ export const STEPS: Step[] = [
     searchPlaceholder: 'Search for ethnicities',
     options: ETHNICITIES, suggested: ['Baloch', 'Bangladeshi', 'Gujarati', 'Hazara', 'Kashmiri', 'Muhajir'],
   },
+  {
+    key: 'languages', kind: 'chips', field: 'languages', title: 'Which languages do you speak?',
+    subtitle: 'Pick all the languages you’re comfortable speaking.', options: LANGUAGES, min: MIN_LANGUAGES,
+  },
   { key: 'marital', kind: 'select', field: 'maritalStatus', title: "What's your marital status?", options: MARITAL },
   {
     key: 'intentions', kind: 'chipGroups', title: 'What are your intentions for marriage?',
@@ -195,12 +226,14 @@ export const STEPS: Step[] = [
     ],
   },
   { key: 'religion', kind: 'cards', field: 'religionPractice', title: 'How do you practise your religion?', options: RELIGION_PRACTICE },
+  { key: 'sect', kind: 'select', field: 'sect', title: "What's your sect?", subtitle: 'This helps us match you with compatible values.', options: SECT },
   { key: 'halal', kind: 'select', field: 'halal', title: 'Do you only eat Halal food?', options: YES_NO },
   { key: 'bornMuslim', kind: 'select', field: 'bornMuslim', title: 'Were you born Muslim?', options: BORN_MUSLIM },
   { key: 'smoke', kind: 'select', field: 'smoke', title: 'Do you smoke?', options: SMOKE },
   { key: 'alcohol', kind: 'select', field: 'alcohol', title: 'Do you drink alcohol?', options: ALCOHOL },
   { key: 'children', kind: 'select', field: 'wantsChildren', title: 'Do you want children?', options: WANTS_CHILDREN },
   { key: 'abroad', kind: 'select', field: 'moveAbroad', title: 'Would you move abroad?', options: MOVE_ABROAD },
+  { key: 'family', kind: 'select', field: 'familyBackground', title: "What's your family background?", subtitle: 'Tell matches a little about your home life.', options: FAMILY_BACKGROUND },
   {
     key: 'interests', kind: 'chips', field: 'interests', title: 'What are your interests?',
     subtitle: `Choose at least ${MIN_INTERESTS} so we can find you better matches.`, options: INTERESTS, min: MIN_INTERESTS,
@@ -224,10 +257,14 @@ export const INITIAL_FORM: OnboardingForm = {
   city: '',
   country: '',
   address: '',
+  height: null,
   profession: null,
   education: null,
   nationalities: [],
   ethnicities: [],
+  languages: [],
+  sect: null,
+  familyBackground: null,
   maritalStatus: null,
   knowFor: null,
   marriedWithin: null,

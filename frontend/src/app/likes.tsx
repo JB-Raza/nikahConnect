@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAlert } from '@/features/alerts/alert-provider';
 import { likers, matches, type Liker, type Match } from '@/features/likes/data';
 import { usePremium } from '@/features/premium/premium-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -18,7 +19,27 @@ export default function LikesScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { isPremium } = usePremium();
+  const { showAlert, showToast } = useAlert();
   const [segment, setSegment] = useState<Segment>('likes');
+  const [matchList, setMatchList] = useState<Match[]>(matches);
+
+  const confirmUnmatch = (match: Match) =>
+    showAlert({
+      type: 'warning',
+      title: 'Unmatch',
+      message: `Unmatch with ${match.name}? This removes the match and your conversation for both of you.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unmatch',
+          style: 'destructive',
+          onPress: () => {
+            setMatchList((current) => current.filter((item) => item.id !== match.id));
+            showToast({ type: 'info', message: `You unmatched ${match.name}.` });
+          },
+        },
+      ],
+    });
 
   const cardWidth = (width - spacing.lg * 2 - spacing.sm) / 2;
 
@@ -42,7 +63,7 @@ export default function LikesScreen() {
 
       <View style={styles.segmentRow}>
         <SegmentTab label={`Likes ${likers.length}`} active={segment === 'likes'} onPress={() => setSegment('likes')} />
-        <SegmentTab label={`Matches ${matches.length}`} active={segment === 'matches'} onPress={() => setSegment('matches')} />
+        <SegmentTab label={`Matches ${matchList.length}`} active={segment === 'matches'} onPress={() => setSegment('matches')} />
       </View>
 
       <ScrollView
@@ -76,15 +97,24 @@ export default function LikesScreen() {
               ))}
             </View>
           </>
+        ) : matchList.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="heart-dislike-outline" size={32} color={palette.textSecondary} />
+            </View>
+            <Text style={styles.emptyTitle}>No matches yet</Text>
+            <Text style={styles.emptyBody}>When you and someone like each other, you’ll see them here.</Text>
+          </View>
         ) : (
           <View style={styles.grid}>
-            {matches.map((match) => (
+            {matchList.map((match) => (
               <MatchCard
                 key={match.id}
                 match={match}
                 width={cardWidth}
                 onPress={() => router.push(`/profile/${match.id}`)}
                 onMessage={() => router.push(`/chat/${match.chatId}`)}
+                onUnmatch={() => confirmUnmatch(match)}
               />
             ))}
           </View>
@@ -175,11 +205,13 @@ function MatchCard({
   width,
   onPress,
   onMessage,
+  onUnmatch,
 }: {
   match: Match;
   width: number;
   onPress: () => void;
   onMessage: () => void;
+  onUnmatch: () => void;
 }) {
   return (
     <Pressable style={[styles.card, { width }]} onPress={onPress}>
@@ -195,6 +227,10 @@ function MatchCard({
         {match.isOnline ? <View style={styles.onlineDot} /> : null}
         <Text style={styles.matchTagText}>{match.isOnline ? 'Online' : match.matchedAt}</Text>
       </View>
+
+      <Pressable style={styles.unmatchButton} onPress={onUnmatch} hitSlop={6} accessibilityLabel={`Unmatch ${match.name}`}>
+        <Ionicons name="close" size={16} color="#ffffff" />
+      </Pressable>
 
       <View style={styles.cardCaption}>
         <Text style={styles.cardName} numberOfLines={1}>
@@ -425,5 +461,44 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontWeight: '800',
     color: palette.primary,
+  },
+  unmatchButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.xxl * 2,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.pill,
+    backgroundColor: palette.chipSurfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  emptyTitle: {
+    fontSize: typography.titleMd,
+    fontWeight: '800',
+    color: palette.textPrimary,
+  },
+  emptyBody: {
+    fontSize: typography.body,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    textAlign: 'center',
+    lineHeight: 21,
   },
 });

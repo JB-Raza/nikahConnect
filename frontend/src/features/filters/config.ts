@@ -27,6 +27,7 @@ export type FilterSection = {
   heading?: string;
   bigTitle?: string;
   bigTitleIcon?: React.ComponentProps<typeof Ionicons>['name'];
+  premium?: boolean;
   fields: FilterFieldConfig[];
 };
 
@@ -55,6 +56,7 @@ export const FILTER_SECTIONS: FilterSection[] = [
     bigTitle: 'Advanced filters',
     bigTitleIcon: 'ribbon',
     heading: 'Profile & Activity',
+    premium: true,
     fields: [
       { id: 'completedBio', label: 'Completed bio', kind: 'single', options: [NONE, 'Completed only'], badge: 'New' },
       { id: 'verified', label: 'ID and age verified', kind: 'single', options: [NONE, 'Verified only'], verified: true },
@@ -67,6 +69,7 @@ export const FILTER_SECTIONS: FilterSection[] = [
   {
     id: 'aboutThem',
     heading: 'About them',
+    premium: true,
     fields: [
       {
         id: 'nationality',
@@ -123,6 +126,7 @@ export const FILTER_SECTIONS: FilterSection[] = [
   {
     id: 'futurePlans',
     heading: 'Future plans',
+    premium: true,
     fields: [
       {
         id: 'marriagePlans',
@@ -147,6 +151,7 @@ export const FILTER_SECTIONS: FilterSection[] = [
   {
     id: 'religiosity',
     heading: 'Religiosity',
+    premium: true,
     fields: [
       {
         id: 'religiousPractice',

@@ -210,7 +210,7 @@ export default function MenuTabScreen() {
             label="Verification"
             value={currentUser.isVerified ? 'Verified' : 'Verify now'}
             valueTint={currentUser.isVerified ? palette.success : palette.warning}
-            onPress={() => comingSoon('Verification')}
+            onPress={() => router.push('/verification')}
           />
         </MenuSection>
 

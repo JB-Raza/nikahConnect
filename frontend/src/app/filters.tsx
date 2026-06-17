@@ -15,6 +15,7 @@ import {
   type FilterSection,
 } from '@/features/filters/config';
 import { useFilters } from '@/features/filters/filters-context';
+import { usePremium } from '@/features/premium/premium-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -24,6 +25,7 @@ const BADGE_COLOR = '#ef4f6b';
 export default function FiltersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isPremium } = usePremium();
   const { draft, setDraftField, syncDraftFromApplied, applyDraft, clearDraft } = useFilters();
 
   useEffect(() => {
@@ -47,6 +49,8 @@ export default function FiltersScreen() {
     router.push({ pathname: '/filter-option', params: { field: fieldId } });
   };
 
+  const openPremium = () => router.push('/premium');
+
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
@@ -63,7 +67,15 @@ export default function FiltersScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + sizing.buttonHeight + spacing.xxl }}>
         {FILTER_SECTIONS.map((section) => (
-          <SectionView key={section.id} section={section} draft={draft} setDraftField={setDraftField} openPicker={openPicker} />
+          <SectionView
+            key={section.id}
+            section={section}
+            draft={draft}
+            setDraftField={setDraftField}
+            openPicker={openPicker}
+            locked={!!section.premium && !isPremium}
+            openPremium={openPremium}
+          />
         ))}
       </ScrollView>
 
@@ -81,11 +93,15 @@ function SectionView({
   draft,
   setDraftField,
   openPicker,
+  locked,
+  openPremium,
 }: {
   section: FilterSection;
   draft: ReturnType<typeof useFilters>['draft'];
   setDraftField: ReturnType<typeof useFilters>['setDraftField'];
   openPicker: (fieldId: string) => void;
+  locked: boolean;
+  openPremium: () => void;
 }) {
   const isBasics = section.id === 'basics';
 
@@ -95,13 +111,47 @@ function SectionView({
         <View style={styles.bigTitleRow}>
           {section.bigTitleIcon ? <Ionicons name={section.bigTitleIcon} size={22} color={palette.warning} /> : null}
           <Text style={styles.bigTitle}>{section.bigTitle}</Text>
+          {locked ? (
+            <View style={styles.premiumPill}>
+              <Ionicons name="lock-closed" size={12} color={palette.premiumAccent} />
+              <Text style={styles.premiumPillText}>Premium</Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
+
+      {locked && section.bigTitle ? (
+        <Pressable style={styles.upgradeCard} onPress={openPremium}>
+          <View style={styles.upgradeIcon}>
+            <Ionicons name="sparkles" size={20} color={palette.premiumAccent} />
+          </View>
+          <View style={styles.upgradeText}>
+            <Text style={styles.upgradeTitle}>Unlock advanced filters</Text>
+            <Text style={styles.upgradeBody}>Go Premium to filter by activity, background, future plans and more.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={palette.premiumAccent} />
+        </Pressable>
+      ) : null}
+
       {section.heading ? <Text style={styles.sectionHeading}>{section.heading}</Text> : null}
 
       <View style={isBasics ? styles.basicsBlock : styles.card}>
         {section.fields.map((field, index) => {
           const isLast = index === section.fields.length - 1;
+
+          if (locked) {
+            return (
+              <FilterRow
+                key={field.id}
+                field={field}
+                value="Premium"
+                active={false}
+                isLast={isLast}
+                locked
+                onPress={openPremium}
+              />
+            );
+          }
 
           if (field.kind === 'ageRange') {
             const range = (draft[field.id] as [number, number]) ?? [AGE_MIN, AGE_MAX];
@@ -146,12 +196,14 @@ function FilterRow({
   active,
   isLast,
   onPress,
+  locked = false,
 }: {
   field: FilterFieldConfig;
   value: string;
   active: boolean;
   isLast: boolean;
   onPress: () => void;
+  locked?: boolean;
 }) {
   return (
     <Pressable
@@ -159,7 +211,7 @@ function FilterRow({
       onPress={onPress}>
       <View style={styles.rowText}>
         <View style={styles.rowLabelLine}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
+          <Text style={[styles.fieldLabel, locked && { color: palette.textSecondary }]}>{field.label}</Text>
           {field.badge ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{field.badge}</Text>
@@ -167,9 +219,15 @@ function FilterRow({
           ) : null}
           {field.verified ? <Ionicons name="checkmark-circle" size={16} color={VERIFIED_COLOR} /> : null}
         </View>
-        <Text style={[styles.fieldValue, active && { color: palette.primary, fontWeight: '700' }]}>{value}</Text>
+        {!locked ? (
+          <Text style={[styles.fieldValue, active && { color: palette.primary, fontWeight: '700' }]}>{value}</Text>
+        ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={palette.textSecondary} />
+      <Ionicons
+        name={locked ? 'lock-closed' : 'chevron-forward'}
+        size={locked ? 16 : 20}
+        color={locked ? palette.premiumAccent : palette.textSecondary}
+      />
     </Pressable>
   );
 }
@@ -241,6 +299,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
+  },
+  premiumPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: palette.premiumSurface,
+    borderWidth: 1,
+    borderColor: palette.premiumBorder,
+  },
+  premiumPillText: {
+    fontSize: typography.label,
+    fontWeight: '800',
+    color: palette.premiumAccent,
+  },
+  upgradeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: palette.premiumSurface,
+    borderWidth: 1,
+    borderColor: palette.premiumBorder,
+  },
+  upgradeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: palette.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upgradeText: {
+    flex: 1,
+    gap: 2,
+  },
+  upgradeTitle: {
+    fontSize: typography.subtitle,
+    fontWeight: '800',
+    color: palette.textPrimary,
+  },
+  upgradeBody: {
+    fontSize: typography.caption,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    lineHeight: 17,
   },
   ageBlock: {
     gap: spacing.md,
