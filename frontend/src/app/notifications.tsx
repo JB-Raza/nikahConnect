@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconCircleButton from '@/components/icon-circle-button';
 import { notifications as seedNotifications, type AppNotification, type NotificationType } from '@/features/notifications/data';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
@@ -56,9 +57,7 @@ export default function NotificationsScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={8} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
         <Text style={styles.headerTitle}>Notifications</Text>
         <Pressable onPress={markAllRead} hitSlop={8} disabled={unreadCount === 0} style={styles.markAll}>
           <Text style={[styles.markAllText, unreadCount === 0 && { color: palette.textSecondary, opacity: 0.5 }]}>

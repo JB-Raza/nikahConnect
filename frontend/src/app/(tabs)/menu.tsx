@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { currentUser } from '@/features/menu/data';
@@ -132,9 +133,7 @@ export default function MenuTabScreen() {
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Menu</Text>
-        <Pressable hitSlop={10} style={styles.headerIcon} onPress={() => router.push('/settings')}>
-          <Ionicons name="settings-outline" size={22} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="settings-outline" onPress={() => router.push('/settings')} accessibilityLabel="Settings" variant="onLight" size={40} iconSize={22} />
       </View>
 
       <ScrollView

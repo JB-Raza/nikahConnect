@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
 import FilterButton from '@/components/filter-button';
+import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { useProfileFilters } from '@/features/filters/use-profile-filters';
 import { profiles as mockProfiles } from '@/features/profiles/data';
@@ -472,9 +473,14 @@ function HeaderIconButton({
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityLabel={label} style={styles.headerIconButton} onPress={onPress}>
-      <Ionicons name={icon} size={typography.subtitle} color={palette.textPrimary} />
-    </Pressable>
+    <IconCircleButton
+      icon={icon}
+      onPress={onPress}
+      accessibilityLabel={label}
+      variant="surface"
+      size={40}
+      iconSize={typography.subtitle}
+    />
   );
 }
 

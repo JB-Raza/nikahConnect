@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -14,9 +14,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
-import { getChatById, getChatThread, type ChatMessage } from '@/features/chat/data';
+import { useChats } from '@/features/chat/chat-context';
+import { getChatThread, type ChatMessage } from '@/features/chat/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -25,6 +27,7 @@ export default function ChatThreadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showAlert } = useAlert();
+  const { chats, markChatRead } = useChats();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const dismiss = () => {
@@ -35,10 +38,16 @@ export default function ChatThreadScreen() {
     }
   };
 
-  const chat = id ? getChatById(id) : undefined;
+  const chat = id ? chats.find((item) => item.id === id) : undefined;
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => (id ? getChatThread(id) : []));
   const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (id) {
+      markChatRead(id);
+    }
+  }, [id, markChatRead]);
 
   if (!chat) {
     return (
@@ -92,9 +101,7 @@ export default function ChatThreadScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.headerBack}>
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
 
         <Pressable style={styles.headerProfile} onPress={() => router.push(`/profile/${chat.id}`)}>
           <View>
@@ -112,9 +119,7 @@ export default function ChatThreadScreen() {
           </View>
         </Pressable>
 
-        <Pressable hitSlop={10} style={styles.headerAction} onPress={openMenu} accessibilityLabel="Chat options">
-          <Ionicons name="ellipsis-vertical" size={20} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="ellipsis-vertical" onPress={openMenu} accessibilityLabel="Chat options" variant="onLight" size={40} iconSize={20} />
       </View>
 
       <KeyboardAvoidingView

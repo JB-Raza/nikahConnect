@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import AlertProvider from '@/features/alerts/alert-provider';
+import ChatProvider from '@/features/chat/chat-context';
 import FiltersProvider from '@/features/filters/filters-context';
 import PremiumProvider from '@/features/premium/premium-context';
 
@@ -12,7 +13,8 @@ export default function RootLayout() {
       <AlertProvider>
         <FiltersProvider>
           <PremiumProvider>
-            <BottomSheetModalProvider>
+            <ChatProvider>
+              <BottomSheetModalProvider>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen
                   name="filters"
@@ -35,7 +37,8 @@ export default function RootLayout() {
                 <Stack.Screen name="boost" options={{ presentation: 'transparentModal', animation: 'fade' }} />
                 <Stack.Screen name="match/[id]" options={{ presentation: 'transparentModal', animation: 'fade' }} />
               </Stack>
-            </BottomSheetModalProvider>
+              </BottomSheetModalProvider>
+            </ChatProvider>
           </PremiumProvider>
         </FiltersProvider>
       </AlertProvider>

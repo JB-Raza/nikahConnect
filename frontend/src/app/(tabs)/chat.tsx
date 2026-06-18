@@ -5,7 +5,8 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import VerifiedStar from '@/components/verified-star';
-import { chatFilters, chats, filterChats, type ChatFilterId, type ChatItem } from '@/features/chat/data';
+import { chatFilters, filterChats, type ChatFilterId, type ChatItem } from '@/features/chat/data';
+import { useChats } from '@/features/chat/chat-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -13,9 +14,10 @@ const palette = colors.light;
 export default function ChatTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { chats, markChatRead } = useChats();
   const [activeFilter, setActiveFilter] = useState<ChatFilterId>('all');
 
-  const visibleChats = useMemo(() => filterChats(chats, activeFilter), [activeFilter]);
+  const visibleChats = useMemo(() => filterChats(chats, activeFilter), [activeFilter, chats]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.xs }]}>
@@ -59,7 +61,15 @@ export default function ChatTabScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item }) => <ChatRow chat={item} onPress={() => router.push(`/chat/${item.id}`)} />}
+          renderItem={({ item }) => (
+            <ChatRow
+              chat={item}
+              onPress={() => {
+                markChatRead(item.id);
+                router.push(`/chat/${item.id}`);
+              }}
+            />
+          )}
         />
       ) : (
         <EmptyChats filter={activeFilter} />

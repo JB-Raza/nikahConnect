@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconCircleButton from '@/components/icon-circle-button';
 import { usePremium, type PlanId } from '@/features/premium/premium-context';
 import { PLANS, PREMIUM_BENEFITS, getPlan, type PremiumBenefit } from '@/features/premium/plans';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -27,14 +28,20 @@ export default function PremiumScreen() {
 
   return (
     <View style={styles.screen}>
+      <IconCircleButton
+        icon="close"
+        onPress={dismiss}
+        variant="onDark"
+        size={44}
+        iconSize={24}
+        accessibilityLabel="Close"
+        style={[styles.close, { top: insets.top + spacing.sm }]}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + sizing.buttonHeight + spacing.xxl * 2 }}>
-        <LinearGradient colors={['#0f5c37', '#177245', palette.background]} locations={[0, 0.55, 1]} style={[styles.hero, { paddingTop: insets.top + spacing.xl }]}>
-          <Pressable onPress={dismiss} hitSlop={10} style={styles.close} accessibilityLabel="Close">
-            <Ionicons name="close" size={26} color="rgba(255,255,255,0.92)" />
-          </Pressable>
-
+        <LinearGradient colors={['#0f5c37', '#177245', palette.background]} locations={[0, 0.55, 1]} style={[styles.hero, { paddingTop: insets.top + spacing.xxl + spacing.lg }]}>
           <View style={styles.crown}>
             <Ionicons name="diamond" size={30} color="#ffffff" />
           </View>
@@ -120,19 +127,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
+  close: {
+    position: 'absolute',
+    right: spacing.lg,
+    zIndex: 20,
+  },
   hero: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
     alignItems: 'center',
-  },
-  close: {
-    position: 'absolute',
-    right: spacing.lg,
-    top: spacing.xl,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   crown: {
     width: 64,

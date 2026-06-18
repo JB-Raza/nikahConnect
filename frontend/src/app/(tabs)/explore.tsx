@@ -1,7 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FilterButton from '@/components/filter-button';
@@ -19,6 +30,7 @@ import { colors, radius, spacing, typography } from '@/theme/theme';
 const palette = colors.light;
 
 type ExploreTab = 'forYou' | 'history';
+const TABS: ExploreTab[] = ['forYou', 'history'];
 
 export default function ExploreTabScreen() {
   const insets = useSafeAreaInsets();
@@ -27,11 +39,45 @@ export default function ExploreTabScreen() {
 
   const [activeTab, setActiveTab] = useState<ExploreTab>('forYou');
   const [historyFilter, setHistoryFilter] = useState<HistoryFilterId>('favourited');
+  const pagerRef = useRef<ScrollView>(null);
+
+  const tabBarWidth = width - spacing.lg * 2;
+  const tabWidth = tabBarWidth / TABS.length;
+  const indicatorWidth = tabWidth * 0.52;
+  const indicatorInset = (tabWidth - indicatorWidth) / 2;
+  const indicatorX = useSharedValue(spacing.lg + indicatorInset);
 
   const carouselCardWidth = Math.round(width * 0.4);
   const gridCardWidth = Math.round((width - spacing.lg * 2 - spacing.sm) / 2);
 
   const openProfile = (id: string) => router.push(`/profile/${id}`);
+
+  const goToTab = useCallback(
+    (tab: ExploreTab, animated = true) => {
+      const index = TABS.indexOf(tab);
+      setActiveTab(tab);
+      pagerRef.current?.scrollTo({ x: index * width, animated });
+      indicatorX.value = withTiming(spacing.lg + index * tabWidth + indicatorInset, { duration: 280 });
+    },
+    [indicatorInset, indicatorX, tabWidth, width],
+  );
+
+  useEffect(() => {
+    const index = TABS.indexOf(activeTab);
+    indicatorX.value = withTiming(spacing.lg + index * tabWidth + indicatorInset, { duration: 280 });
+  }, [activeTab, indicatorInset, indicatorX, tabWidth]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+  }));
+
+  const onPagerScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    const nextTab = TABS[index] ?? 'forYou';
+    if (nextTab !== activeTab) {
+      setActiveTab(nextTab);
+    }
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.xs }]}>
@@ -41,21 +87,35 @@ export default function ExploreTabScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        <TabButton label="For You" active={activeTab === 'forYou'} onPress={() => setActiveTab('forYou')} />
-        <TabButton label="My History" active={activeTab === 'history'} onPress={() => setActiveTab('history')} />
+        <View style={styles.tabButtonsRow}>
+          <TabButton label="For You" active={activeTab === 'forYou'} onPress={() => goToTab('forYou')} />
+          <TabButton label="My History" active={activeTab === 'history'} onPress={() => goToTab('history')} />
+        </View>
+        <Animated.View style={[styles.tabIndicator, { width: indicatorWidth }, indicatorStyle]} />
       </View>
 
-      {activeTab === 'forYou' ? (
-        <ForYouTab cardWidth={carouselCardWidth} bottomInset={insets.bottom} onOpenProfile={openProfile} />
-      ) : (
-        <HistoryTab
-          activeFilter={historyFilter}
-          onSelectFilter={setHistoryFilter}
-          cardWidth={gridCardWidth}
-          bottomInset={insets.bottom}
-          onOpenProfile={openProfile}
-        />
-      )}
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={onPagerScrollEnd}
+        style={styles.flex}>
+        <View style={{ width, flex: 1 }}>
+          <ForYouTab cardWidth={carouselCardWidth} bottomInset={insets.bottom} onOpenProfile={openProfile} />
+        </View>
+        <View style={{ width, flex: 1 }}>
+          <HistoryTab
+            activeFilter={historyFilter}
+            onSelectFilter={setHistoryFilter}
+            cardWidth={gridCardWidth}
+            bottomInset={insets.bottom}
+            onOpenProfile={openProfile}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -233,7 +293,6 @@ function TabButton({ label, active, onPress }: { label: string; active: boolean;
   return (
     <Pressable style={styles.tabButton} onPress={onPress}>
       <Text style={[styles.tabLabel, { color: active ? palette.textPrimary : palette.textSecondary }]}>{label}</Text>
-      <View style={[styles.tabIndicator, { backgroundColor: active ? palette.primary : 'transparent' }]} />
     </Pressable>
   );
 }
@@ -258,26 +317,31 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
   },
   tabBar: {
-    flexDirection: 'row',
     paddingHorizontal: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: palette.border,
+  },
+  tabButtonsRow: {
+    flexDirection: 'row',
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     paddingTop: spacing.xs,
-    gap: spacing.xs,
+    paddingBottom: spacing.sm,
   },
   tabLabel: {
     fontSize: typography.subtitle,
     fontWeight: '700',
   },
   tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
     height: 3,
-    width: '52%',
     borderTopLeftRadius: radius.pill,
     borderTopRightRadius: radius.pill,
+    backgroundColor: palette.primary,
   },
   section: {
     marginBottom: spacing.xl,

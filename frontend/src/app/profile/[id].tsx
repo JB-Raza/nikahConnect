@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
+import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { getProfileById } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -94,12 +95,8 @@ export default function ProfileDetailScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]} pointerEvents="box-none">
-        <Pressable onPress={dismiss} hitSlop={8} style={styles.circleButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={palette.textPrimary} />
-        </Pressable>
-        <Pressable onPress={handleShare} hitSlop={8} style={styles.circleButton} accessibilityLabel="Share profile">
-          <Ionicons name="share-social-outline" size={20} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="surface" size={40} iconSize={24} />
+        <IconCircleButton icon="share-social-outline" onPress={handleShare} accessibilityLabel="Share profile" variant="surface" size={40} iconSize={20} />
       </View>
 
       <ScrollView

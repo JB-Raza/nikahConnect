@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import {
   INITIAL_FORM,
@@ -153,15 +153,11 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.header}>
-        <Pressable onPress={goBack} hitSlop={10} style={styles.iconButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="chevron-back" onPress={goBack} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
         <View style={styles.progressTrack}>
           <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
         </View>
-        <Pressable onPress={showHelp} hitSlop={10} style={styles.iconButton} accessibilityLabel="Help">
-          <Ionicons name="help-circle-outline" size={24} color={palette.textPrimary} />
-        </Pressable>
+        <IconCircleButton icon="help-circle-outline" onPress={showHelp} accessibilityLabel="Help" variant="onLight" size={40} iconSize={22} />
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -213,7 +209,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
-  iconButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   progressTrack: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: palette.border, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: palette.primary },
   content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
