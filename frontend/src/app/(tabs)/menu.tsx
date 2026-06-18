@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
-import { currentUser } from '@/features/menu/data';
+import { useUserProfile } from '@/features/profile/user-profile-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -28,14 +28,19 @@ export default function MenuTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { showAlert, showToast } = useAlert();
+  const { user, name, age, photo, completionPercent, patchProfile } = useUserProfile();
 
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
   const [blurPhotos, setBlurPhotos] = useState(false);
   const [hideFromSearch, setHideFromSearch] = useState(false);
   const [whoCanMessage, setWhoCanMessage] = useState('Everyone');
 
-  const avatarSource: ImageSourcePropType = avatarUri ? { uri: avatarUri } : currentUser.photo;
+  const avatarSource: ImageSourcePropType = photo;
+
+  const updatePrimaryPhoto = (uri: string | null) => {
+    const rest = user.profile.photos.slice(1);
+    patchProfile({ photos: uri ? [uri, ...rest] : rest });
+  };
 
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -54,7 +59,7 @@ export default function MenuTabScreen() {
       quality: 0.8,
     });
     if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
+      updatePrimaryPhoto(result.assets[0].uri);
     }
   };
 
@@ -75,7 +80,7 @@ export default function MenuTabScreen() {
       quality: 0.8,
     });
     if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
+      updatePrimaryPhoto(result.assets[0].uri);
     }
   };
 
@@ -86,7 +91,7 @@ export default function MenuTabScreen() {
       buttons: [
         { text: 'Take a photo', onPress: takePhoto },
         { text: 'Choose from gallery', onPress: pickFromGallery },
-        ...(avatarUri ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setAvatarUri(null) }] : []),
+        ...(user.profile.photos[0] ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => updatePrimaryPhoto(null) }] : []),
         { text: 'Cancel', style: 'cancel' as const },
       ],
     });
@@ -127,7 +132,7 @@ export default function MenuTabScreen() {
       ],
     });
 
-  const completionPercent = Math.round(currentUser.completion * 100);
+  const completionLabel = completionPercent;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
@@ -152,20 +157,20 @@ export default function MenuTabScreen() {
           </View>
 
           <View style={styles.nameRow}>
-            <Text style={styles.name}>{currentUser.name}</Text>
-            <Text style={styles.age}>{currentUser.age}</Text>
-            {currentUser.isVerified ? <VerifiedStar size={16} /> : null}
+            <Text style={styles.name}>{name}</Text>
+            {age ? <Text style={styles.age}>{age}</Text> : null}
+            {user.isVerified ? <VerifiedStar size={16} /> : null}
           </View>
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={13} color={palette.textSecondary} />
             <Text style={styles.location}>
-              {currentUser.city}, {currentUser.country}
+              {user.profile.city}, {user.profile.country}
             </Text>
           </View>
 
           <View style={styles.completionCard}>
             <View style={styles.completionTextRow}>
-              <Text style={styles.completionLabel}>Profile {completionPercent}% complete</Text>
+              <Text style={styles.completionLabel}>Profile {completionLabel}% complete</Text>
               <Pressable hitSlop={6} onPress={() => router.push('/edit-profile')}>
                 <Text style={styles.completionCta}>Complete</Text>
               </Pressable>
@@ -176,7 +181,7 @@ export default function MenuTabScreen() {
           </View>
 
           <Pressable
-            onPress={() => router.push(`/profile/${currentUser.id}`)}
+            onPress={() => router.push(`/profile/${user.id}`)}
             style={({ pressed }) => [styles.viewProfileButton, pressed && { opacity: 0.9 }]}>
             <Ionicons name="eye-outline" size={18} color={palette.textOnPrimary} />
             <Text style={styles.viewProfileLabel}>View my profile</Text>
@@ -207,8 +212,8 @@ export default function MenuTabScreen() {
           <MenuRow
             icon="shield-checkmark-outline"
             label="Verification"
-            value={currentUser.isVerified ? 'Verified' : 'Verify now'}
-            valueTint={currentUser.isVerified ? palette.success : palette.warning}
+            value={user.isVerified ? 'Verified' : 'Verify now'}
+            valueTint={user.isVerified ? palette.success : palette.warning}
             onPress={() => router.push('/verification')}
           />
         </MenuSection>

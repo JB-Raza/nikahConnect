@@ -1,99 +1,114 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type ImageSourcePropType,
-} from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import ProfilePhotoGrid from '@/components/profile-photo-grid';
 import { SettingsScaffold, settingsPalette } from '@/components/settings-kit';
 import { useAlert } from '@/features/alerts/alert-provider';
-import { currentUser } from '@/features/menu/data';
+import { MAX_PHOTOS, STEPS, type OnboardingForm } from '@/features/onboarding/config';
+import { useEditProfileDraft } from '@/features/profile/edit-profile-draft-context';
+import type { EditProfileFieldKey } from '@/features/profile/edit-profile-fields';
+import { useUserProfile } from '@/features/profile/user-profile-context';
 import { radius, spacing, typography } from '@/theme/theme';
 
 const palette = settingsPalette;
-const AVATAR_SIZE = 104;
 
-const INTEREST_POOL = ['Reading', 'Travel', 'Cooking', 'Fitness', 'Volunteering', 'Calligraphy', 'Hiking', 'Photography'];
+function stepOptions(key: string): string[] {
+  return STEPS.find((step) => step.key === key)?.options?.map((option) => option.label) ?? [];
+}
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { showAlert, showToast } = useAlert();
+  const { user, setProfile } = useUserProfile();
+  const { draft, beginDraft, patchDraft, endDraft } = useEditProfileDraft();
 
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [name, setName] = useState(currentUser.name);
-  const [bio, setBio] = useState('Practising and family-oriented, looking for a partner to grow in deen with, insha’Allah.');
-  const [occupation, setOccupation] = useState('Software Engineer');
-  const [city, setCity] = useState(currentUser.city);
-  const [country, setCountry] = useState(currentUser.country);
-  const [height, setHeight] = useState('178');
-  const [interests, setInterests] = useState<string[]>(['Reading', 'Travel', 'Fitness']);
+  useEffect(() => {
+    beginDraft(user.profile);
+  }, [beginDraft, user.profile]);
 
-  const avatarSource: ImageSourcePropType = avatarUri ? { uri: avatarUri } : currentUser.photo;
+  if (!draft) {
+    return null;
+  }
 
-  const changePhoto = () => {
+  const patch = (partial: Partial<OnboardingForm>) => patchDraft(partial);
+
+  const openField = (field: EditProfileFieldKey) => {
+    router.push({ pathname: '/edit-profile-field', params: { field } });
+  };
+
+  const addPhoto = () =>
     showAlert({
-      title: 'Update profile photo',
-      message: 'Choose where to get your new picture from.',
+      title: 'Add a photo',
+      message: 'Choose where to get your photo from.',
       buttons: [
-        { text: 'Take a photo', onPress: takePhoto },
+        { text: 'Take a photo', onPress: captureFromCamera },
         { text: 'Choose from gallery', onPress: pickFromGallery },
         { text: 'Cancel', style: 'cancel' },
       ],
     });
-  };
 
-  const takePhoto = async () => {
+  const captureFromCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      showAlert({
-        type: 'warning',
-        title: 'Camera access needed',
-        message: 'Enable camera access for NikahConnect in Settings to take a photo.',
-      });
+      showAlert({ type: 'warning', title: 'Camera access needed', message: 'Enable camera access in Settings to take a photo.' });
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
     if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
+      patch({ photos: [...draft.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
     }
   };
 
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      showAlert({
-        type: 'warning',
-        title: 'Photos access needed',
-        message: 'Enable photo access for NikahConnect in Settings to choose a picture.',
-      });
+      showAlert({ type: 'warning', title: 'Photos access needed', message: 'Enable photo access in Settings to add a picture.' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [3, 4], quality: 0.8 });
     if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
+      patch({ photos: [...draft.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
     }
   };
 
-  const toggleInterest = (interest: string) =>
-    setInterests((current) =>
-      current.includes(interest) ? current.filter((item) => item !== interest) : [...current, interest],
-    );
+  const removePhoto = (uri: string) =>
+    showAlert({
+      type: 'warning',
+      title: 'Remove photo',
+      message: 'Remove this photo from your profile?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => patch({ photos: draft.photos.filter((item) => item !== uri) }) },
+      ],
+    });
 
-  const save = () => {
-    if (!name.trim()) {
-      showToast({ type: 'error', message: 'Please enter your name.' });
+  const toggleChip = (field: 'interests' | 'personality' | 'languages', value: string, max?: number) => {
+    const current = draft[field];
+    const exists = current.includes(value);
+    if (!exists && max && current.length >= max) {
+      showToast({ type: 'info', message: `You can choose up to ${max}.` });
       return;
     }
+    patch({ [field]: exists ? current.filter((item) => item !== value) : [...current, value] });
+  };
+
+  const save = () => {
+    if (!draft.firstName.trim()) {
+      showToast({ type: 'error', message: 'Please enter your first name.' });
+      return;
+    }
+    setProfile(draft);
+    endDraft();
     showToast({ type: 'success', message: 'Profile saved.' });
     router.back();
   };
+
+  const interestOptions = stepOptions('interests');
+  const personalityOptions = stepOptions('personality');
+  const languageOptions = stepOptions('languages');
 
   return (
     <SettingsScaffold
@@ -103,140 +118,143 @@ export default function EditProfileScreen() {
           <Text style={styles.saveLabel}>Save changes</Text>
         </Pressable>
       }>
-      <View style={styles.avatarBlock}>
-        <View style={styles.avatarWrap}>
-          <Image source={avatarSource} style={styles.avatar} resizeMode="cover" />
-          <Pressable onPress={changePhoto} hitSlop={8} style={styles.cameraButton} accessibilityLabel="Change profile photo">
-            <Ionicons name="camera" size={16} color={palette.textOnPrimary} />
-          </Pressable>
-        </View>
-        <Pressable onPress={changePhoto} hitSlop={6}>
-          <Text style={styles.changePhotoText}>Change photo</Text>
-        </Pressable>
-      </View>
+      <View style={styles.scroll}>
+        <Section title="Photos">
+          <ProfilePhotoGrid photos={draft.photos} onAddPhoto={addPhoto} onRemovePhoto={removePhoto} contentPadding={spacing.lg * 2} />
+        </Section>
 
-      <View style={styles.form}>
-        <Field label="Name" value={name} onChangeText={setName} placeholder="Your name" />
-        <Field
-          label="About me"
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Tell others about yourself"
-          multiline
-        />
-        <Field label="Occupation" value={occupation} onChangeText={setOccupation} placeholder="What do you do?" />
-        <View style={styles.row}>
-          <View style={styles.flex}>
-            <Field label="City" value={city} onChangeText={setCity} placeholder="City" />
+        <Section title="Basic info">
+          <Field label="First name" value={draft.firstName} onChangeText={(value) => patch({ firstName: value })} />
+          <Field label="Last name" value={draft.lastName} onChangeText={(value) => patch({ lastName: value })} />
+          <Field label="Bio" value={draft.bio} onChangeText={(value) => patch({ bio: value })} multiline />
+          <View style={styles.row}>
+            <View style={styles.flex}>
+              <Field label="City" value={draft.city} onChangeText={(value) => patch({ city: value })} />
+            </View>
+            <View style={styles.flex}>
+              <Field label="Country" value={draft.country} onChangeText={(value) => patch({ country: value })} />
+            </View>
           </View>
-          <View style={styles.flex}>
-            <Field label="Country" value={country} onChangeText={setCountry} placeholder="Country" />
-          </View>
-        </View>
-        <Field label="Height (cm)" value={height} onChangeText={setHeight} placeholder="e.g. 178" keyboardType="number-pad" />
+        </Section>
 
-        <Text style={styles.fieldLabel}>Interests</Text>
-        <View style={styles.chips}>
-          {INTEREST_POOL.map((interest) => {
-            const active = interests.includes(interest);
-            return (
-              <Pressable
-                key={interest}
-                onPress={() => toggleInterest(interest)}
-                style={[styles.chip, active && styles.chipActive]}>
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{interest}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <Section title="Background">
+          <SelectRow label="Height" value={draft.height} onPress={() => openField('height')} />
+          <SelectRow label="Profession" value={draft.profession} onPress={() => openField('profession')} />
+          <SelectRow label="Education" value={draft.education} onPress={() => openField('education')} />
+          <SelectRow label="Marital status" value={draft.maritalStatus} onPress={() => openField('maritalStatus')} />
+          <SelectRow label="Sect" value={draft.sect} onPress={() => openField('sect')} />
+          <SelectRow label="Family background" value={draft.familyBackground} onPress={() => openField('familyBackground')} />
+        </Section>
+
+        <Section title="Languages">
+          <ChipGroup options={languageOptions} selected={draft.languages} onToggle={(value) => toggleChip('languages', value)} />
+        </Section>
+
+        <Section title="Faith & lifestyle">
+          <SelectRow label="Religious practice" value={draft.religionPractice} onPress={() => openField('religionPractice')} />
+          <SelectRow label="Halal only" value={draft.halal} onPress={() => openField('halal')} />
+          <SelectRow label="Born Muslim" value={draft.bornMuslim} onPress={() => openField('bornMuslim')} />
+          <SelectRow label="Smoke" value={draft.smoke} onPress={() => openField('smoke')} />
+          <SelectRow label="Alcohol" value={draft.alcohol} onPress={() => openField('alcohol')} />
+          <SelectRow label="Wants children" value={draft.wantsChildren} onPress={() => openField('wantsChildren')} />
+          <SelectRow label="Move abroad" value={draft.moveAbroad} onPress={() => openField('moveAbroad')} />
+        </Section>
+
+        <Section title="Marriage intentions">
+          <SelectRow label="Know someone for" value={draft.knowFor} onPress={() => openField('knowFor')} />
+          <SelectRow label="Married within" value={draft.marriedWithin} onPress={() => openField('marriedWithin')} />
+        </Section>
+
+        <Section title="Interests">
+          <ChipGroup options={interestOptions} selected={draft.interests} onToggle={(value) => toggleChip('interests', value, 8)} />
+        </Section>
+
+        <Section title="Personality">
+          <ChipGroup options={personalityOptions} selected={draft.personality} onToggle={(value) => toggleChip('personality', value, 5)} />
+        </Section>
       </View>
     </SettingsScaffold>
   );
 }
 
-type FieldProps = {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionBody}>{children}</View>
+    </View>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChangeText,
+  multiline,
+}: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
-  placeholder?: string;
   multiline?: boolean;
-  keyboardType?: 'default' | 'number-pad';
-};
-
-function Field({ label, value, onChangeText, placeholder, multiline, keyboardType = 'default' }: FieldProps) {
+}) {
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
         placeholderTextColor={palette.textSecondary}
         multiline={multiline}
-        keyboardType={keyboardType}
         style={[styles.input, multiline && styles.inputMultiline]}
       />
     </View>
   );
 }
 
+function SelectRow({ label, value, onPress }: { label: string; value: string | null; onPress: () => void }) {
+  return (
+    <Pressable style={styles.selectRow} onPress={onPress}>
+      <View style={styles.selectText}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <Text style={styles.selectValue}>{value ?? 'Not set'}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={palette.textSecondary} />
+    </Pressable>
+  );
+}
+
+function ChipGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <View style={styles.chips}>
+      {options.map((option) => {
+        const active = selected.includes(option);
+        return (
+          <Pressable key={option} onPress={() => onToggle(option)} style={[styles.chip, active && styles.chipActive]}>
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>{option}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  avatarBlock: {
-    alignItems: 'center',
-    paddingTop: spacing.md,
-    gap: spacing.xs,
-  },
-  avatarWrap: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-  },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: palette.chipSurfaceSoft,
-    borderWidth: 3,
-    borderColor: palette.surface,
-  },
-  cameraButton: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: palette.background,
-  },
-  changePhotoText: {
-    fontSize: typography.body,
-    fontWeight: '700',
-    color: palette.primary,
-  },
-  form: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    gap: spacing.md,
-  },
-  field: {
-    gap: spacing.xs,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  flex: {
-    flex: 1,
-  },
-  fieldLabel: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-    color: palette.textSecondary,
-    marginLeft: spacing.xxs,
-  },
+  scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
+  section: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  sectionTitle: { fontSize: typography.caption, fontWeight: '800', color: palette.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionBody: { gap: spacing.sm },
+  field: { gap: spacing.xxs },
+  row: { flexDirection: 'row', gap: spacing.sm },
+  flex: { flex: 1 },
+  fieldLabel: { fontSize: typography.caption, fontWeight: '700', color: palette.textSecondary, marginLeft: spacing.xxs },
   input: {
     backgroundColor: palette.surface,
     borderRadius: radius.md,
@@ -249,16 +267,22 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
     minHeight: 50,
   },
-  inputMultiline: {
-    minHeight: 96,
-    textAlignVertical: 'top',
-    paddingTop: spacing.sm,
-  },
-  chips: {
+  inputMultiline: { minHeight: 96, textAlignVertical: 'top', paddingTop: spacing.sm },
+  selectRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: palette.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 54,
   },
+  selectText: { flex: 1, gap: 2 },
+  selectValue: { fontSize: typography.body, fontWeight: '600', color: palette.textPrimary },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -267,18 +291,9 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     backgroundColor: palette.surface,
   },
-  chipActive: {
-    backgroundColor: palette.primary,
-    borderColor: palette.primary,
-  },
-  chipText: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    color: palette.textSecondary,
-  },
-  chipTextActive: {
-    color: palette.textOnPrimary,
-  },
+  chipActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  chipText: { fontSize: typography.caption, fontWeight: '600', color: palette.textSecondary },
+  chipTextActive: { color: palette.textOnPrimary },
   saveButton: {
     height: 52,
     borderRadius: radius.md,
@@ -286,9 +301,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveLabel: {
-    fontSize: typography.button,
-    fontWeight: '700',
-    color: palette.textOnPrimary,
-  },
+  saveLabel: { fontSize: typography.button, fontWeight: '700', color: palette.textOnPrimary },
 });

@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { useState, type ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { type ComponentProps, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import ProfilePhotoGrid from '@/components/profile-photo-grid';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 import {
-  MAX_PHOTOS,
   MIN_BIO,
   MIN_AGE,
   type IoniconName,
@@ -275,68 +274,10 @@ export default function StepBody({
   }
 
   if (step.kind === 'photos') {
-    return (
-      <PhotoGrid
-        photos={form.photos}
-        onAddPhoto={onAddPhoto}
-        onRemovePhoto={onRemovePhoto}
-      />
-    );
+    return <ProfilePhotoGrid photos={form.photos} onAddPhoto={onAddPhoto} onRemovePhoto={onRemovePhoto} />;
   }
 
   return null;
-}
-
-function PhotoGrid({
-  photos,
-  onAddPhoto,
-  onRemovePhoto,
-}: {
-  photos: string[];
-  onAddPhoto: () => void;
-  onRemovePhoto: (uri: string) => void;
-}) {
-  const { width } = useWindowDimensions();
-  const columns = 3;
-  const horizontalPadding = spacing.xl * 2;
-  const gap = spacing.sm;
-  const tileSize = Math.floor((width - horizontalPadding - gap * (columns - 1)) / columns);
-
-  return (
-    <View style={[styles.photoGrid, { gap }]}>
-      {Array.from({ length: MAX_PHOTOS }).map((_, index) => {
-        const uri = photos[index];
-        const tileStyle = { width: tileSize, height: Math.round(tileSize * 1.28) };
-
-        if (uri) {
-          return (
-            <Pressable key={uri} style={[styles.photoTile, tileStyle]} onPress={() => onRemovePhoto(uri)}>
-              <Image source={{ uri }} style={styles.photoImage} contentFit="cover" transition={120} />
-              {index === 0 ? (
-                <View style={styles.mainBadge}>
-                  <Text style={styles.mainBadgeText}>Main</Text>
-                </View>
-              ) : null}
-              <View style={styles.removeBadge}>
-                <Ionicons name="close" size={14} color="#ffffff" />
-              </View>
-            </Pressable>
-          );
-        }
-
-        const isNext = index === photos.length;
-        return (
-          <Pressable
-            key={`empty-${index}`}
-            style={[styles.photoTile, styles.photoEmpty, tileStyle, isNext && styles.photoEmptyActive]}
-            onPress={onAddPhoto}
-            disabled={!isNext}>
-            <Ionicons name={isNext ? 'add' : 'image-outline'} size={26} color={isNext ? palette.primary : palette.textSecondary} />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
 }
 
 function SearchField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -638,37 +579,4 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
   },
   bioCounter: { fontSize: typography.label, fontWeight: '600', color: palette.textSecondary, alignSelf: 'flex-end' },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  photoTile: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.chipSurfaceSoft },
-  photoImage: { width: '100%', height: '100%' },
-  photoEmpty: {
-    borderWidth: 1.5,
-    borderColor: palette.border,
-    borderStyle: 'dashed',
-    backgroundColor: palette.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoEmptyActive: { borderColor: palette.primary, backgroundColor: palette.chipSurfaceSoft },
-  mainBadge: {
-    position: 'absolute',
-    left: spacing.xs,
-    top: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: palette.primary,
-  },
-  mainBadgeText: { fontSize: typography.label, fontWeight: '800', color: '#ffffff' },
-  removeBadge: {
-    position: 'absolute',
-    right: spacing.xs,
-    top: spacing.xs,
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(9,18,14,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

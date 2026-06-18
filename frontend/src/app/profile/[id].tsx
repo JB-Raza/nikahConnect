@@ -20,6 +20,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CompatibilityBar from '@/components/compatibility-bar';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
+import { resolveMatchChatId } from '@/features/alerts/match-alert';
+import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { getProfileById } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
@@ -29,16 +31,17 @@ const MIN_COMPLIMENT_LENGTH = 10;
 export default function ProfileDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showMatch } = useAlert();
+  const { isFavorited, toggleFavorite, recordLike, recordCompliment, blockUser } = useProfileActions();
   const { width, height } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const profile = useMemo(() => getProfileById(id), [id]);
 
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [liked, setLiked] = useState(false);
-  const [favorited, setFavorited] = useState(false);
   const [composerText, setComposerText] = useState('');
+
+  const favorited = isFavorited(profile.id);
 
   const complimentSheetRef = useRef<BottomSheetModal>(null);
   const complimentSnapPoints = useMemo(() => ['56%'], []);
@@ -66,9 +69,30 @@ export default function ProfileDetailScreen() {
     if (!complimentIsValid) {
       return;
     }
+    recordCompliment(profile);
     complimentSheetRef.current?.dismiss();
     setComposerText('');
     showToast({ type: 'success', message: `Your compliment to ${profile.name} has been sent.` });
+  };
+
+  const handleFavorite = () => {
+    const added = toggleFavorite(profile);
+    showToast({
+      type: 'success',
+      message: added ? `${profile.name} added to favourites.` : `${profile.name} removed from favourites.`,
+    });
+  };
+
+  const handleLike = () => {
+    const isMatch = recordLike(profile);
+    if (isMatch) {
+      showMatch({
+        name: profile.name,
+        onChat: () => router.push(`/chat/${resolveMatchChatId(profile.id)}`),
+      });
+    } else {
+      showToast({ type: 'success', message: `Waiting for ${profile.name}'s response.` });
+    }
   };
 
   const handleShare = async () => {
@@ -86,7 +110,11 @@ export default function ProfileDetailScreen() {
       message: `Block ${profile.name}? They won't be able to see your profile or message you.`,
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Block', style: 'destructive', onPress: dismiss },
+        { text: 'Block', style: 'destructive', onPress: () => {
+            blockUser(profile);
+            showToast({ type: 'info', message: `${profile.name} has been blocked.` });
+            dismiss();
+          } },
       ],
     });
 
@@ -221,7 +249,7 @@ export default function ProfileDetailScreen() {
             <FooterAction
               label={favorited ? 'Favorited' : 'Favorite'}
               icon={favorited ? 'bookmark' : 'bookmark-outline'}
-              onPress={() => setFavorited((value) => !value)}
+              onPress={handleFavorite}
             />
             <FooterAction label="Block user" icon="ban-outline" onPress={confirmBlock} />
             <FooterAction label="Report user" icon="flag-outline" onPress={openReport} />
@@ -232,10 +260,10 @@ export default function ProfileDetailScreen() {
       <View style={[styles.stickyActions, { bottom: stickyBottomOffset }]} pointerEvents="box-none">
         <CircleAction
           icon="checkmark"
-          backgroundColor={liked ? palette.success : '#ffffff'}
-          iconColor={liked ? '#ffffff' : palette.success}
+          backgroundColor={palette.success}
+          iconColor="#ffffff"
           size={66}
-          onPress={() => setLiked((value) => !value)}
+          onPress={handleLike}
         />
         <CircleAction
           icon="sparkles"

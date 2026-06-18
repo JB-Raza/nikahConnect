@@ -19,6 +19,8 @@ import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { useChats } from '@/features/chat/chat-context';
 import { getChatThread, type ChatMessage } from '@/features/chat/data';
+import { useProfileActions } from '@/features/profile/profile-actions-context';
+import { getProfileById } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -26,7 +28,8 @@ const palette = colors.light;
 export default function ChatThreadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { showAlert } = useAlert();
+  const { showAlert, showToast } = useAlert();
+  const { blockUser } = useProfileActions();
   const { chats, markChatRead } = useChats();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -82,7 +85,15 @@ export default function ChatThreadScreen() {
       message: `Block ${chat.name}? They won't be able to see your profile or message you.`,
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Block', style: 'destructive', onPress: dismiss },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: () => {
+            blockUser(getProfileById(chat.id));
+            showToast({ type: 'info', message: `${chat.name} has been blocked.` });
+            dismiss();
+          },
+        },
       ],
     });
 

@@ -6,7 +6,7 @@ import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getLikerById, matches } from '@/features/likes/data';
-import { currentUser } from '@/features/menu/data';
+import { useUserProfile } from '@/features/profile/user-profile-context';
 import { getProfileById } from '@/features/profiles/data';
 import { radius, spacing, typography } from '@/theme/theme';
 
@@ -15,6 +15,7 @@ export default function MatchScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  const { photo: myPhoto } = useUserProfile();
   const liker = getLikerById(id);
   const profile = getProfileById(id);
   const name = liker?.name ?? profile.name;
@@ -59,7 +60,7 @@ export default function MatchScreen() {
         <Text style={styles.subtitle}>You and {name} liked each other</Text>
 
         <View style={styles.avatarsRow}>
-          <Image source={currentUser.photo} style={[styles.avatar, styles.avatarLeft]} resizeMode="cover" />
+          <Image source={myPhoto} style={[styles.avatar, styles.avatarLeft]} resizeMode="cover" />
           <Image source={photo} style={[styles.avatar, styles.avatarRight]} resizeMode="cover" />
           <View style={styles.heartBadge}>
             <Ionicons name="heart" size={26} color="#ffffff" />

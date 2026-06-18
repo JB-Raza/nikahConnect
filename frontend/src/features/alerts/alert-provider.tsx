@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOutUp, ZoomIn } from 'react-native-reanimated';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, FadeIn, FadeInDown, FadeOut, FadeOutUp } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -41,8 +41,15 @@ export type ToastOptions = {
   duration?: number;
 };
 
+export type MatchAlertOptions = {
+  name: string;
+  onChat: () => void;
+  onBrowse?: () => void;
+};
+
 type AlertApi = {
   showAlert: (options: AlertOptions) => void;
+  showMatch: (options: MatchAlertOptions) => void;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
   showToast: (options: ToastOptions) => void;
 };
@@ -65,18 +72,29 @@ const TOAST_CONFIG: Record<ToastType, { icon: React.ComponentProps<typeof Ionico
 };
 
 type DialogState = AlertOptions & { id: number };
+type MatchDialogState = MatchAlertOptions & { id: number };
 type ToastState = ToastOptions & { id: number };
+
+const CARD_ENTER = FadeInDown.duration(260).easing(Easing.out(Easing.cubic));
+const CARD_EXIT = FadeOut.duration(180);
 
 export default function AlertProvider({ children }: { children: React.ReactNode }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [matchDialog, setMatchDialog] = useState<MatchDialogState | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
   const counter = useRef(0);
 
   const closeDialog = useCallback(() => setDialog(null), []);
+  const closeMatchDialog = useCallback(() => setMatchDialog(null), []);
 
   const showAlert = useCallback((options: AlertOptions) => {
     counter.current += 1;
     setDialog({ ...options, id: counter.current });
+  }, []);
+
+  const showMatch = useCallback((options: MatchAlertOptions) => {
+    counter.current += 1;
+    setMatchDialog({ ...options, id: counter.current });
   }, []);
 
   const confirm = useCallback(
@@ -115,10 +133,11 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
     [dismissToast],
   );
 
-  const api = useMemo<AlertApi>(() => ({ showAlert, confirm, showToast }), [showAlert, confirm, showToast]);
+  const api = useMemo<AlertApi>(() => ({ showAlert, showMatch, confirm, showToast }), [showAlert, showMatch, confirm, showToast]);
 
   const buttons = dialog?.buttons?.length ? dialog.buttons : [{ text: 'OK' } as AlertButton];
   const isRow = buttons.length === 2;
+  const scrollActions = buttons.length > 3;
   const config = TYPE_CONFIG[dialog?.type ?? 'info'];
 
   const runButton = (button: AlertButton) => {
@@ -135,6 +154,11 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
     }
   };
 
+  const runMatchButton = (onPress?: () => void) => {
+    closeMatchDialog();
+    onPress?.();
+  };
+
   return (
     <AlertContext.Provider value={api}>
       {children}
@@ -142,11 +166,11 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
       <Modal transparent visible={dialog !== null} animationType="fade" statusBarTranslucent onRequestClose={handleBackdrop}>
         {dialog ? (
           <View style={styles.modalRoot}>
-            <Animated.View entering={FadeIn.duration(140)} style={StyleSheet.absoluteFill}>
+            <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill}>
               <Pressable style={styles.backdrop} onPress={handleBackdrop} />
             </Animated.View>
 
-            <Animated.View entering={ZoomIn.springify().damping(18).mass(0.7)} style={styles.card}>
+            <Animated.View entering={CARD_ENTER} exiting={CARD_EXIT} style={styles.card}>
               <View style={[styles.iconCircle, { backgroundColor: `${config.color}1a` }]}>
                 <Ionicons name={config.icon} size={34} color={config.color} />
               </View>
@@ -154,15 +178,61 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
               <Text style={styles.title}>{dialog.title}</Text>
               {dialog.message ? <Text style={styles.message}>{dialog.message}</Text> : null}
 
-              <View style={[styles.actions, isRow ? styles.actionsRow : styles.actionsColumn]}>
-                {buttons.map((button, index) => (
-                  <DialogButton
-                    key={`${button.text}-${index}`}
-                    button={button}
-                    flex={isRow}
-                    onPress={() => runButton(button)}
-                  />
-                ))}
+              {scrollActions ? (
+                <ScrollView style={styles.actionsScroll} contentContainerStyle={[styles.actions, styles.actionsColumn]} bounces={false}>
+                  {buttons.map((button, index) => (
+                    <DialogButton
+                      key={`${button.text}-${index}`}
+                      button={button}
+                      flex={false}
+                      onPress={() => runButton(button)}
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={[styles.actions, isRow ? styles.actionsRow : styles.actionsColumn]}>
+                  {buttons.map((button, index) => (
+                    <DialogButton
+                      key={`${button.text}-${index}`}
+                      button={button}
+                      flex={isRow}
+                      onPress={() => runButton(button)}
+                    />
+                  ))}
+                </View>
+              )}
+            </Animated.View>
+          </View>
+        ) : null}
+      </Modal>
+
+      <Modal transparent visible={matchDialog !== null} animationType="fade" statusBarTranslucent onRequestClose={closeMatchDialog}>
+        {matchDialog ? (
+          <View style={styles.modalRoot}>
+            <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill}>
+              <Pressable style={styles.backdrop} onPress={closeMatchDialog} />
+            </Animated.View>
+
+            <Animated.View entering={CARD_ENTER} exiting={CARD_EXIT} style={styles.card}>
+              <View style={[styles.iconCircle, styles.matchIconCircle]}>
+                <Ionicons name="heart" size={34} color={palette.textOnPrimary} />
+              </View>
+
+              <Text style={styles.matchKicker}>It&apos;s a match!</Text>
+              <Text style={styles.title}>You and {matchDialog.name} liked each other</Text>
+              <Text style={styles.message}>Make the first move and start with a warm salam.</Text>
+
+              <View style={[styles.actions, styles.actionsColumn]}>
+                <DialogButton
+                  button={{ text: 'Send a message', style: 'default' }}
+                  flex={false}
+                  onPress={() => runMatchButton(matchDialog.onChat)}
+                />
+                <DialogButton
+                  button={{ text: 'Continue browsing', style: 'cancel' }}
+                  flex={false}
+                  onPress={() => runMatchButton(matchDialog.onBrowse)}
+                />
               </View>
             </Animated.View>
           </View>
@@ -286,6 +356,22 @@ const styles = StyleSheet.create({
   },
   actionsColumn: {
     flexDirection: 'column',
+  },
+  actionsScroll: {
+    alignSelf: 'stretch',
+    marginTop: spacing.lg,
+    maxHeight: 280,
+  },
+  matchIconCircle: {
+    backgroundColor: palette.primary,
+  },
+  matchKicker: {
+    fontSize: typography.caption,
+    fontWeight: '800',
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.xxs,
   },
   button: {
     minHeight: 50,

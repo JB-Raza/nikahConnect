@@ -15,6 +15,7 @@ import {
   type OnboardingForm,
 } from '@/features/onboarding/config';
 import StepBody from '@/features/onboarding/step-body';
+import { useUserProfile } from '@/features/profile/user-profile-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -24,6 +25,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showAlert, showToast } = useAlert();
+  const { setProfile } = useUserProfile();
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,7 @@ export default function OnboardingScreen() {
 
   const finish = () => {
     setLoading(true);
+    setProfile(form);
     setTimeout(() => {
       setLoading(false);
       router.replace('/(tabs)/marriage');

@@ -13,6 +13,7 @@ import {
   Image,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -25,7 +26,9 @@ import CompatibilityBar from '@/components/compatibility-bar';
 import FilterButton from '@/components/filter-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
+import { resolveMatchChatId } from '@/features/alerts/match-alert';
 import { useProfileFilters } from '@/features/filters/use-profile-filters';
+import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { profiles as mockProfiles } from '@/features/profiles/data';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
@@ -46,11 +49,12 @@ export default function MarriageTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showMatch } = useAlert();
 
   const { filter: filterProfiles, activeCount, clearAllFilters } = useProfileFilters();
+  const { passedIds, isBlocked, isFavorited, recordPass, recordLike, toggleFavorite, recordCompliment, blockUser, resetDeck } =
+    useProfileActions();
 
-  const [passedIds, setPassedIds] = useState<string[]>([]);
   const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [selectedSorts, setSelectedSorts] = useState<string[]>(['Most compatible']);
   const [composerText, setComposerText] = useState('');
@@ -63,8 +67,11 @@ export default function MarriageTabScreen() {
   const complimentSnapPoints = useMemo(() => ['56%'], []);
 
   const visibleProfiles = useMemo(
-    () => filterProfiles(mockProfiles).filter((profile) => !passedIds.includes(profile.id)),
-    [filterProfiles, passedIds],
+    () =>
+      filterProfiles(mockProfiles).filter(
+        (profile) => !passedIds.includes(profile.id) && !isBlocked(profile.id),
+      ),
+    [filterProfiles, passedIds, isBlocked],
   );
 
   const currentProfile = visibleProfiles[0] ?? null;
@@ -81,13 +88,10 @@ export default function MarriageTabScreen() {
   );
 
   const consumeCurrentProfile = useCallback(() => {
-    if (currentProfile) {
-      setPassedIds((previous) => [...previous, currentProfile.id]);
-    }
     setHeroImageIndex(0);
     setComposerText('');
     setInlineCompliment('');
-  }, [currentProfile]);
+  }, []);
 
   const openSortSheet = () => {
     complimentSheetRef.current?.dismiss();
@@ -111,27 +115,91 @@ export default function MarriageTabScreen() {
     sortSheetRef.current?.dismiss();
   };
 
-  const handlePass = () => consumeCurrentProfile();
-  const handleLike = () => consumeCurrentProfile();
+  const handlePass = () => {
+    if (currentProfile) {
+      recordPass(currentProfile);
+    }
+    consumeCurrentProfile();
+  };
+
+  const handleLike = () => {
+    if (!currentProfile) {
+      return;
+    }
+    const isMatch = recordLike(currentProfile);
+    const profileId = currentProfile.id;
+    const name = currentProfile.name;
+    consumeCurrentProfile();
+    if (isMatch) {
+      showMatch({
+        name,
+        onChat: () => router.push(`/chat/${resolveMatchChatId(profileId)}`),
+      });
+    } else {
+      showToast({ type: 'success', message: `Waiting for ${name}'s response.` });
+    }
+  };
 
   const handleSuperLike = () => {
-    const name = currentProfile?.name;
+    if (!currentProfile) {
+      return;
+    }
+    const name = currentProfile.name;
+    const isMatch = recordLike(currentProfile);
+    const profileId = currentProfile.id;
     consumeCurrentProfile();
-    showToast({ type: 'success', message: name ? `You super liked ${name}.` : 'Super like sent.' });
+    if (isMatch) {
+      showMatch({
+        name,
+        onChat: () => router.push(`/chat/${resolveMatchChatId(profileId)}`),
+      });
+    } else {
+      showToast({ type: 'success', message: name ? `Waiting for ${name}'s response.` : 'Super like sent.' });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!currentProfile) {
+      return;
+    }
+    try {
+      await Share.share({ message: `Check out ${currentProfile.name}'s profile on NikahConnect.` });
+    } catch {
+      // user dismissed share sheet
+    }
+  };
+
+  const handleFavorite = () => {
+    if (!currentProfile) {
+      return;
+    }
+    const added = toggleFavorite(currentProfile);
+    showToast({
+      type: 'success',
+      message: added ? `${currentProfile.name} added to favourites.` : `${currentProfile.name} removed from favourites.`,
+    });
   };
 
   const handleBlock = () => {
     if (!currentProfile) {
       return;
     }
-    const name = currentProfile.name;
+    const profile = currentProfile;
     showAlert({
       type: 'warning',
       title: 'Block user',
-      message: `Block ${name}? They won't be able to see your profile or message you.`,
+      message: `Block ${profile.name}? They won't be able to see your profile or message you.`,
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Block', style: 'destructive', onPress: consumeCurrentProfile },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: () => {
+            blockUser(profile);
+            consumeCurrentProfile();
+            showToast({ type: 'info', message: `${profile.name} has been blocked.` });
+          },
+        },
       ],
     });
   };
@@ -144,12 +212,16 @@ export default function MarriageTabScreen() {
   };
 
   const handleSendCompliment = () => {
-    if (!complimentIsValid) {
+    if (!complimentIsValid || !currentProfile) {
       return;
     }
+    recordCompliment(currentProfile);
     consumeCurrentProfile();
     complimentSheetRef.current?.dismiss();
+    showToast({ type: 'success', message: `Your compliment to ${currentProfile.name} has been sent.` });
   };
+
+  const favorited = currentProfile ? isFavorited(currentProfile.id) : false;
 
   if (!currentProfile) {
     return (
@@ -165,7 +237,6 @@ export default function MarriageTabScreen() {
             style={[styles.reloadButton, { backgroundColor: palette.primary }]}
             onPress={() => {
               clearAllFilters();
-              setPassedIds([]);
               setHeroImageIndex(0);
             }}>
             <Text style={[styles.reloadButtonText, { color: palette.textOnPrimary }]}>Clear filters</Text>
@@ -177,7 +248,7 @@ export default function MarriageTabScreen() {
             activeCount > 0 ? { borderColor: palette.border } : { backgroundColor: palette.primary },
           ]}
           onPress={() => {
-            setPassedIds([]);
+            resetDeck();
             setHeroImageIndex(0);
           }}>
           <Text
@@ -341,8 +412,12 @@ export default function MarriageTabScreen() {
 
         <Section title="Profile Actions" last>
           <View style={styles.footerActions}>
-            <FooterAction label="Share profile" icon="share-social-outline" onPress={() => {}} />
-            <FooterAction label="Favorite" icon="bookmark-outline" onPress={() => {}} />
+            <FooterAction label="Share profile" icon="share-social-outline" onPress={handleShare} />
+            <FooterAction
+              label={favorited ? 'Favorited' : 'Favorite'}
+              icon={favorited ? 'bookmark' : 'bookmark-outline'}
+              onPress={handleFavorite}
+            />
             <FooterAction label="Block user" icon="ban-outline" onPress={handleBlock} />
             <FooterAction label="Report user" icon="flag-outline" onPress={handleReport} />
           </View>

@@ -20,11 +20,11 @@ import ProfileCard from '@/components/profile-card';
 import {
   forYouSections,
   historyFilters,
-  historyResults,
   type ExploreProfile,
   type ForYouSection,
   type HistoryFilterId,
 } from '@/features/explore/data';
+import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -36,6 +36,8 @@ export default function ExploreTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { width } = useWindowDimensions();
+
+  const { getHistory } = useProfileActions();
 
   const [activeTab, setActiveTab] = useState<ExploreTab>('forYou');
   const [historyFilter, setHistoryFilter] = useState<HistoryFilterId>('favourited');
@@ -94,6 +96,10 @@ export default function ExploreTabScreen() {
         <Animated.View style={[styles.tabIndicator, { width: indicatorWidth }, indicatorStyle]} />
       </View>
 
+      {activeTab === 'history' ? (
+        <HistoryFilterStrip activeFilter={historyFilter} onSelectFilter={setHistoryFilter} getHistory={getHistory} />
+      ) : null}
+
       <ScrollView
         ref={pagerRef}
         horizontal
@@ -109,10 +115,10 @@ export default function ExploreTabScreen() {
         <View style={{ width, flex: 1 }}>
           <HistoryTab
             activeFilter={historyFilter}
-            onSelectFilter={setHistoryFilter}
             cardWidth={gridCardWidth}
             bottomInset={insets.bottom}
             onOpenProfile={openProfile}
+            getHistory={getHistory}
           />
         </View>
       </ScrollView>
@@ -208,58 +214,71 @@ function TwoRowCarousel({
   );
 }
 
-function HistoryTab({
+function HistoryFilterStrip({
   activeFilter,
   onSelectFilter,
-  cardWidth,
-  bottomInset,
-  onOpenProfile,
+  getHistory,
 }: {
   activeFilter: HistoryFilterId;
   onSelectFilter: (id: HistoryFilterId) => void;
+  getHistory: (filter: HistoryFilterId) => ExploreProfile[];
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
+      style={styles.chipsList}
+      contentContainerStyle={styles.chipsContent}>
+      {historyFilters.map((item) => {
+        const active = item.id === activeFilter;
+        const count = getHistory(item.id).length;
+        return (
+          <Pressable
+            key={item.id}
+            onPress={() => onSelectFilter(item.id)}
+            style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}>
+            <Ionicons
+              name={item.icon as React.ComponentProps<typeof Ionicons>['name']}
+              size={15}
+              color={active ? palette.textOnPrimary : palette.textSecondary}
+            />
+            <Text style={[styles.chipText, { color: active ? palette.textOnPrimary : palette.textPrimary }]}>
+              {item.label}
+            </Text>
+            {count > 0 ? (
+              <View style={[styles.chipBadge, active ? styles.chipBadgeActive : styles.chipBadgeInactive]}>
+                <Text style={[styles.chipBadgeText, { color: active ? palette.textOnPrimary : palette.textSecondary }]}>
+                  {count}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function HistoryTab({
+  activeFilter,
+  cardWidth,
+  bottomInset,
+  onOpenProfile,
+  getHistory,
+}: {
+  activeFilter: HistoryFilterId;
   cardWidth: number;
   bottomInset: number;
   onOpenProfile: (id: string) => void;
+  getHistory: (filter: HistoryFilterId) => ExploreProfile[];
 }) {
-  const results = historyResults[activeFilter];
+  const results = getHistory(activeFilter);
   const activeLabel = historyFilters.find((filter) => filter.id === activeFilter)?.label ?? '';
 
   return (
     <View style={styles.flex}>
-      <FlatList
-        data={historyFilters}
-        horizontal
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsList}
-        contentContainerStyle={styles.chipsContent}
-        renderItem={({ item }) => {
-          const active = item.id === activeFilter;
-          const count = historyResults[item.id].length;
-          return (
-            <Pressable
-              onPress={() => onSelectFilter(item.id)}
-              style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}>
-              <Ionicons
-                name={item.icon as React.ComponentProps<typeof Ionicons>['name']}
-                size={15}
-                color={active ? palette.textOnPrimary : palette.textSecondary}
-              />
-              <Text style={[styles.chipText, { color: active ? palette.textOnPrimary : palette.textPrimary }]}>
-                {item.label}
-              </Text>
-              {count > 0 ? (
-                <View style={[styles.chipBadge, active ? styles.chipBadgeActive : styles.chipBadgeInactive]}>
-                  <Text style={[styles.chipBadgeText, { color: active ? palette.textOnPrimary : palette.textSecondary }]}>
-                    {count}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-          );
-        }}
-      />
-
       {results.length > 0 ? (
         <FlatList
           data={results}
@@ -371,11 +390,16 @@ const styles = StyleSheet.create({
   },
   chipsList: {
     flexGrow: 0,
+    flexShrink: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.border,
   },
   chipsContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
@@ -385,6 +409,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: radius.pill,
     borderWidth: 1,
+    flexShrink: 0,
   },
   chipActive: {
     backgroundColor: palette.primary,

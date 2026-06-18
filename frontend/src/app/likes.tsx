@@ -6,6 +6,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, Vi
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAlert } from '@/features/alerts/alert-provider';
+import { resolveMatchChatId } from '@/features/alerts/match-alert';
 import { likers, matches, type Liker, type Match } from '@/features/likes/data';
 import { usePremium } from '@/features/premium/premium-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -19,7 +20,7 @@ export default function LikesScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { isPremium } = usePremium();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showMatch } = useAlert();
   const [segment, setSegment] = useState<Segment>('likes');
   const [matchList, setMatchList] = useState<Match[]>(matches);
 
@@ -92,7 +93,12 @@ export default function LikesScreen() {
                   width={cardWidth}
                   locked={!isPremium}
                   onPress={() => (isPremium ? router.push(`/profile/${liker.id}`) : router.push('/premium'))}
-                  onLikeBack={() => router.push(`/match/${liker.id}`)}
+                  onLikeBack={() =>
+                    showMatch({
+                      name: liker.name,
+                      onChat: () => router.push(`/chat/${resolveMatchChatId(liker.id)}`),
+                    })
+                  }
                 />
               ))}
             </View>
