@@ -10,11 +10,16 @@ import {
   type ColorValue,
   type GestureResponderEvent,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '@/theme/theme';
 
+const TAB_BAR_CONTENT_HEIGHT = 64;
+
 export default function TabsLayout() {
   const palette = colors.light;
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, spacing.sm);
 
   return (
     <Tabs
@@ -26,16 +31,15 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
-          marginBottom: spacing.xs,
           marginTop: spacing.xxs,
         },
         tabBarStyle: {
           backgroundColor: palette.tabBarBackground,
           borderTopWidth: 1,
           borderTopColor: palette.tabBarBorder,
-          height: 78,
+          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
           paddingTop: spacing.sm,
-          paddingBottom: spacing.sm,
+          paddingBottom: bottomInset,
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
           ...styles.shadow,
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: {
-    backgroundColor: 'rgba(23, 114, 69, 0.12)',
+    backgroundColor: 'rgba(36, 134, 224, 0.12)',
   },
   shadow: {
     shadowColor: '#0c1712',

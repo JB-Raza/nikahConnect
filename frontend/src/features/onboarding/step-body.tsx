@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type ComponentProps, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { type ComponentProps, forwardRef, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 
 import ProfilePhotoGrid from '@/components/profile-photo-grid';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 import {
-  MIN_BIO,
   MIN_AGE,
   type IoniconName,
   type Option,
@@ -73,32 +72,7 @@ export default function StepBody({
   }
 
   if (step.kind === 'dob') {
-    const updateDob = (key: 'day' | 'month' | 'year', value: string) =>
-      patch({ dob: { ...form.dob, [key]: value.replace(/\D/g, '') } });
-    const valid = age !== null && age >= MIN_AGE;
-    return (
-      <View style={styles.gap}>
-        <View style={styles.dobRow}>
-          <DobField label="Day" placeholder="DD" maxLength={2} value={form.dob.day} onChangeText={(v) => updateDob('day', v)} />
-          <DobField label="Month" placeholder="MM" maxLength={2} value={form.dob.month} onChangeText={(v) => updateDob('month', v)} />
-          <DobField label="Year" placeholder="YYYY" maxLength={4} value={form.dob.year} onChangeText={(v) => updateDob('year', v)} flex={1.4} />
-        </View>
-        <View style={styles.agePreview}>
-          <Ionicons
-            name={valid ? 'checkmark-circle' : 'information-circle-outline'}
-            size={16}
-            color={valid ? palette.success : palette.textSecondary}
-          />
-          <Text style={styles.agePreviewText}>
-            {age === null
-              ? 'Enter a valid date of birth.'
-              : age < MIN_AGE
-                ? `You must be at least ${MIN_AGE} years old.`
-                : `You are ${age} years old.`}
-          </Text>
-        </View>
-      </View>
-    );
+    return <DobStep form={form} age={age} patch={patch} />;
   }
 
   if (step.kind === 'location') {
@@ -253,7 +227,6 @@ export default function StepBody({
   }
 
   if (step.kind === 'bio') {
-    const length = form.bio.trim().length;
     return (
       <View style={styles.gap}>
         <TextInput
@@ -266,9 +239,7 @@ export default function StepBody({
           value={form.bio}
           onChangeText={(value) => patch({ bio: value })}
         />
-        <Text style={styles.bioCounter}>
-          {length < MIN_BIO ? `${MIN_BIO - length} more characters needed` : `${form.bio.length}/500`}
-        </Text>
+        <Text style={styles.bioCounter}>{form.bio.length}/500</Text>
       </View>
     );
   }
@@ -278,6 +249,92 @@ export default function StepBody({
   }
 
   return null;
+}
+
+function DobStep({
+  form,
+  age,
+  patch,
+}: {
+  form: OnboardingForm;
+  age: number | null;
+  patch: (partial: Partial<OnboardingForm>) => void;
+}) {
+  const dayRef = useRef<TextInput>(null);
+  const monthRef = useRef<TextInput>(null);
+  const yearRef = useRef<TextInput>(null);
+  const valid = age !== null && age >= MIN_AGE;
+
+  const updateDob = (key: 'day' | 'month' | 'year', value: string) => {
+    const digits = value.replace(/\D/g, '');
+    patch({ dob: { ...form.dob, [key]: digits } });
+    if (key === 'day' && digits.length === 2) {
+      monthRef.current?.focus();
+    } else if (key === 'month' && digits.length === 2) {
+      yearRef.current?.focus();
+    }
+  };
+
+  const handleBackspace = (key: 'month' | 'year') => (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (event.nativeEvent.key !== 'Backspace') {
+      return;
+    }
+    if (key === 'month' && form.dob.month.length === 0) {
+      patch({ dob: { ...form.dob, day: form.dob.day.slice(0, -1) } });
+      dayRef.current?.focus();
+    } else if (key === 'year' && form.dob.year.length === 0) {
+      patch({ dob: { ...form.dob, month: form.dob.month.slice(0, -1) } });
+      monthRef.current?.focus();
+    }
+  };
+
+  return (
+    <View style={styles.gap}>
+      <View style={styles.dobRow}>
+        <DobField
+          ref={dayRef}
+          label="Day"
+          placeholder="DD"
+          maxLength={2}
+          value={form.dob.day}
+          onChangeText={(v) => updateDob('day', v)}
+        />
+        <DobField
+          ref={monthRef}
+          label="Month"
+          placeholder="MM"
+          maxLength={2}
+          value={form.dob.month}
+          onChangeText={(v) => updateDob('month', v)}
+          onKeyPress={handleBackspace('month')}
+        />
+        <DobField
+          ref={yearRef}
+          label="Year"
+          placeholder="YYYY"
+          maxLength={4}
+          value={form.dob.year}
+          onChangeText={(v) => updateDob('year', v)}
+          onKeyPress={handleBackspace('year')}
+          flex={1.4}
+        />
+      </View>
+      <View style={styles.agePreview}>
+        <Ionicons
+          name={valid ? 'checkmark-circle' : 'information-circle-outline'}
+          size={16}
+          color={valid ? palette.success : palette.textSecondary}
+        />
+        <Text style={styles.agePreviewText}>
+          {age === null
+            ? 'Enter a valid date of birth.'
+            : age < MIN_AGE
+              ? `You must be at least ${MIN_AGE} years old.`
+              : `You are ${age} years old.`}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 function SearchField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -395,20 +452,25 @@ function LabeledInput({
   );
 }
 
-function DobField({
-  label,
-  flex = 1,
-  ...props
-}: ComponentProps<typeof TextInput> & { label: string; flex?: number }) {
-  return (
-    <View style={[styles.labeledField, { flex }]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldBox}>
-        <TextInput style={[styles.fieldInput, styles.dobInput]} placeholderTextColor={palette.textSecondary} keyboardType="number-pad" {...props} />
+const DobField = forwardRef<TextInput, ComponentProps<typeof TextInput> & { label: string; flex?: number }>(
+  ({ label, flex = 1, ...props }, ref) => {
+    return (
+      <View style={[styles.labeledField, { flex }]}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <View style={styles.fieldBox}>
+          <TextInput
+            ref={ref}
+            style={[styles.fieldInput, styles.dobInput]}
+            placeholderTextColor={palette.textSecondary}
+            keyboardType="number-pad"
+            {...props}
+          />
+        </View>
       </View>
-    </View>
-  );
-}
+    );
+  },
+);
+DobField.displayName = 'DobField';
 
 function GenderCard({
   label,

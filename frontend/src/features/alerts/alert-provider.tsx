@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeInDown, FadeOut, FadeOutUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, FadeOutUp, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -56,13 +58,15 @@ type AlertApi = {
 
 const AlertContext = createContext<AlertApi | null>(null);
 
-const TYPE_CONFIG: Record<AlertType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
-  success: { icon: 'checkmark-circle', color: palette.success },
-  error: { icon: 'alert-circle', color: palette.danger },
-  warning: { icon: 'warning', color: palette.warning },
-  info: { icon: 'information-circle', color: palette.primary },
-  confirm: { icon: 'help-circle', color: palette.primary },
+const TYPE_CONFIG: Record<AlertType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; gradient: readonly [string, string] }> = {
+  success: { icon: 'checkmark-done', color: palette.success, gradient: ['#22a866', '#15643c'] },
+  error: { icon: 'close', color: palette.danger, gradient: ['#e0584f', '#a8261f'] },
+  warning: { icon: 'alert', color: palette.warning, gradient: ['#e3a53c', '#a4610f'] },
+  info: { icon: 'information', color: palette.primary, gradient: ['#3a9bef', '#155fa8'] },
+  confirm: { icon: 'help', color: palette.primary, gradient: ['#3a9bef', '#155fa8'] },
 };
+
+const MATCH_GRADIENT: readonly [string, string] = ['#3a9bef', '#155fa8'];
 
 const TOAST_CONFIG: Record<ToastType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
   success: { icon: 'checkmark-circle', color: palette.success },
@@ -75,8 +79,20 @@ type DialogState = AlertOptions & { id: number };
 type MatchDialogState = MatchAlertOptions & { id: number };
 type ToastState = ToastOptions & { id: number };
 
-const CARD_ENTER = FadeInDown.duration(260).easing(Easing.out(Easing.cubic));
-const CARD_EXIT = FadeOut.duration(180);
+const cardEntering = () => {
+  'worklet';
+  return {
+    initialValues: { opacity: 0, transform: [{ scale: 0.88 }, { translateY: 14 }] },
+    animations: {
+      opacity: withTiming(1, { duration: 150 }),
+      transform: [
+        { scale: withSpring(1, { damping: 15, stiffness: 190, mass: 0.7 }) },
+        { translateY: withSpring(0, { damping: 16, stiffness: 190, mass: 0.7 }) },
+      ],
+    },
+  };
+};
+const CARD_EXIT = FadeOut.duration(130);
 
 export default function AlertProvider({ children }: { children: React.ReactNode }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
@@ -166,41 +182,41 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
       <Modal transparent visible={dialog !== null} animationType="fade" statusBarTranslucent onRequestClose={handleBackdrop}>
         {dialog ? (
           <View style={styles.modalRoot}>
-            <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill}>
-              <Pressable style={styles.backdrop} onPress={handleBackdrop} />
-            </Animated.View>
+            <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdrop}>
+              <BlurView intensity={45} tint="dark" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
+              <View style={styles.backdropTint} />
+            </Pressable>
 
-            <Animated.View entering={CARD_ENTER} exiting={CARD_EXIT} style={styles.card}>
-              <View style={[styles.iconCircle, { backgroundColor: `${config.color}1a` }]}>
-                <Ionicons name={config.icon} size={34} color={config.color} />
+            <Animated.View entering={cardEntering} exiting={CARD_EXIT} style={styles.cardContainer}>
+              <View style={styles.card}>
+                <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
+                <View style={styles.cardTint} />
+
+                <View style={styles.cardContent}>
+                  <Text style={styles.title}>{dialog.title}</Text>
+                  {dialog.message ? <Text style={styles.message}>{dialog.message}</Text> : null}
+
+                  {scrollActions ? (
+                    <ScrollView style={styles.actionsScroll} contentContainerStyle={[styles.actions, styles.actionsColumn]} bounces={false}>
+                      {buttons.map((button, index) => (
+                        <DialogButton key={`${button.text}-${index}`} button={button} flex={false} onPress={() => runButton(button)} />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={[styles.actions, isRow ? styles.actionsRow : styles.actionsColumn]}>
+                      {buttons.map((button, index) => (
+                        <DialogButton key={`${button.text}-${index}`} button={button} flex={isRow} onPress={() => runButton(button)} />
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
 
-              <Text style={styles.title}>{dialog.title}</Text>
-              {dialog.message ? <Text style={styles.message}>{dialog.message}</Text> : null}
-
-              {scrollActions ? (
-                <ScrollView style={styles.actionsScroll} contentContainerStyle={[styles.actions, styles.actionsColumn]} bounces={false}>
-                  {buttons.map((button, index) => (
-                    <DialogButton
-                      key={`${button.text}-${index}`}
-                      button={button}
-                      flex={false}
-                      onPress={() => runButton(button)}
-                    />
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={[styles.actions, isRow ? styles.actionsRow : styles.actionsColumn]}>
-                  {buttons.map((button, index) => (
-                    <DialogButton
-                      key={`${button.text}-${index}`}
-                      button={button}
-                      flex={isRow}
-                      onPress={() => runButton(button)}
-                    />
-                  ))}
-                </View>
-              )}
+              <View style={styles.badgeWrap} pointerEvents="none">
+                <LinearGradient colors={config.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
+                  <Ionicons name={config.icon} size={30} color="#ffffff" />
+                </LinearGradient>
+              </View>
             </Animated.View>
           </View>
         ) : null}
@@ -209,30 +225,40 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
       <Modal transparent visible={matchDialog !== null} animationType="fade" statusBarTranslucent onRequestClose={closeMatchDialog}>
         {matchDialog ? (
           <View style={styles.modalRoot}>
-            <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill}>
-              <Pressable style={styles.backdrop} onPress={closeMatchDialog} />
-            </Animated.View>
+            <Pressable style={StyleSheet.absoluteFill} onPress={closeMatchDialog}>
+              <BlurView intensity={45} tint="dark" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
+              <View style={styles.backdropTint} />
+            </Pressable>
 
-            <Animated.View entering={CARD_ENTER} exiting={CARD_EXIT} style={styles.card}>
-              <View style={[styles.iconCircle, styles.matchIconCircle]}>
-                <Ionicons name="heart" size={34} color={palette.textOnPrimary} />
+            <Animated.View entering={cardEntering} exiting={CARD_EXIT} style={styles.cardContainer}>
+              <View style={styles.card}>
+                <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
+                <View style={styles.cardTint} />
+
+                <View style={styles.cardContent}>
+                  <Text style={styles.matchKicker}>It&apos;s a match!</Text>
+                  <Text style={styles.title}>You and {matchDialog.name} liked each other</Text>
+                  <Text style={styles.message}>Make the first move and start with a warm salam.</Text>
+
+                  <View style={[styles.actions, styles.actionsColumn]}>
+                    <DialogButton
+                      button={{ text: 'Send a message', style: 'default' }}
+                      flex={false}
+                      onPress={() => runMatchButton(matchDialog.onChat)}
+                    />
+                    <DialogButton
+                      button={{ text: 'Continue browsing', style: 'cancel' }}
+                      flex={false}
+                      onPress={() => runMatchButton(matchDialog.onBrowse)}
+                    />
+                  </View>
+                </View>
               </View>
 
-              <Text style={styles.matchKicker}>It&apos;s a match!</Text>
-              <Text style={styles.title}>You and {matchDialog.name} liked each other</Text>
-              <Text style={styles.message}>Make the first move and start with a warm salam.</Text>
-
-              <View style={[styles.actions, styles.actionsColumn]}>
-                <DialogButton
-                  button={{ text: 'Send a message', style: 'default' }}
-                  flex={false}
-                  onPress={() => runMatchButton(matchDialog.onChat)}
-                />
-                <DialogButton
-                  button={{ text: 'Continue browsing', style: 'cancel' }}
-                  flex={false}
-                  onPress={() => runMatchButton(matchDialog.onBrowse)}
-                />
+              <View style={styles.badgeWrap} pointerEvents="none">
+                <LinearGradient colors={MATCH_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
+                  <Ionicons name="heart" size={30} color="#ffffff" />
+                </LinearGradient>
               </View>
             </Animated.View>
           </View>
@@ -312,28 +338,68 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(8, 16, 24, 0.55)',
+  backdropTint: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(9, 16, 26, 0.18)',
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: 326,
+    marginTop: 30,
+    shadowColor: '#0a1422',
+    shadowOpacity: 0.24,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 16,
   },
   card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: palette.surface,
     borderRadius: radius.xl,
-    padding: spacing.xl,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.65)',
+  },
+  cardTint: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+  },
+  cardContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: 42,
+    paddingBottom: spacing.lg,
     alignItems: 'center',
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.pill,
+  badgeWrap: {
+    position: 'absolute',
+    top: -30,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  badge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#0a1422',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
   },
   title: {
-    fontSize: typography.titleMd,
+    fontSize: 19,
+    lineHeight: 25,
     fontWeight: '800',
     color: palette.textPrimary,
     textAlign: 'center',
@@ -343,13 +409,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: palette.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
-    marginTop: spacing.xs,
+    lineHeight: 21,
+    marginTop: spacing.xxs,
   },
   actions: {
     alignSelf: 'stretch',
-    marginTop: spacing.lg,
-    gap: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.xs,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -359,11 +425,8 @@ const styles = StyleSheet.create({
   },
   actionsScroll: {
     alignSelf: 'stretch',
-    marginTop: spacing.lg,
-    maxHeight: 280,
-  },
-  matchIconCircle: {
-    backgroundColor: palette.primary,
+    marginTop: spacing.md,
+    maxHeight: 260,
   },
   matchKicker: {
     fontSize: typography.caption,
@@ -374,11 +437,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxs,
   },
   button: {
-    minHeight: 50,
+    minHeight: 40,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   buttonFlex: {
     flex: 1,

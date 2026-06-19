@@ -244,7 +244,7 @@ export const STEPS: Step[] = [
   },
   {
     key: 'bio', kind: 'bio', field: 'bio', title: 'About you',
-    subtitle: 'Share a little about yourself and what you’re looking for.',
+    subtitle: 'Optional — share a little about yourself and what you’re looking for.',
   },
   { key: 'photos', kind: 'photos', title: 'Add your photos', subtitle: 'Add at least one. Your first photo is your main one.' },
 ];
@@ -319,7 +319,7 @@ export function isStepValid(step: Step, form: OnboardingForm, age: number | null
     case 'chipGroups':
       return (step.groups ?? []).every((group) => form[group.field] !== null);
     case 'bio':
-      return form.bio.trim().length >= MIN_BIO;
+      return true;
     case 'photos':
       return form.photos.length >= 1;
     default:

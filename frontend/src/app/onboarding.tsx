@@ -54,16 +54,33 @@ export default function OnboardingScreen() {
     }, 900);
   };
 
+  const skipChildren = form.maritalStatus === 'Never married';
+  const isStepSkipped = (index: number) => STEPS[index]?.key === 'children' && skipChildren;
+
+  const nextStepIndex = (from: number) => {
+    let index = from + 1;
+    while (index < total && isStepSkipped(index)) index += 1;
+    return index;
+  };
+
+  const prevStepIndex = (from: number) => {
+    let index = from - 1;
+    while (index >= 0 && isStepSkipped(index)) index -= 1;
+    return index;
+  };
+
   const advance = () => {
-    if (isLast) {
+    const next = nextStepIndex(step);
+    if (isLast || next >= total) {
       finish();
       return;
     }
-    setStep((value) => value + 1);
+    setStep(next);
   };
 
   const goBack = () => {
-    if (step === 0) {
+    const previous = prevStepIndex(step);
+    if (previous < 0) {
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -71,11 +88,15 @@ export default function OnboardingScreen() {
       }
       return;
     }
-    setStep((value) => value - 1);
+    setStep(previous);
   };
 
   const selectSingle = (field: keyof OnboardingForm, value: string) => {
-    patch({ [field]: value } as Partial<OnboardingForm>);
+    if (field === 'maritalStatus' && value === 'Never married') {
+      patch({ maritalStatus: value, wantsChildren: 'No' });
+    } else {
+      patch({ [field]: value } as Partial<OnboardingForm>);
+    }
     advance();
   };
 

@@ -26,16 +26,16 @@ export default function RootLayout() {
                   name="filters"
                   options={{
                     presentation: 'card',
-                    animation: 'slide_from_bottom',
-                    animationDuration: 50,
+                    animation: 'fade_from_bottom',
+                    animationDuration: 200,
                   }}
                 />
                 <Stack.Screen
                   name="filter-option"
                   options={{
                     presentation: 'card',
-                    animation: 'slide_from_right',
-                    animationDuration: 1000,
+                    animation: 'fade_from_bottom',
+                    animationDuration: 200,
                   }}
                 />
                 <Stack.Screen name="premium/checkout" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
