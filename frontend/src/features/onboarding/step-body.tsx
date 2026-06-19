@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { type ComponentProps, forwardRef, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 
@@ -25,6 +26,8 @@ type StepBodyProps = {
   onToggleMulti: (field: keyof OnboardingForm, value: string) => void;
   onAddPhoto: () => void;
   onRemovePhoto: (uri: string) => void;
+  /** Total horizontal padding wrapping the photo grid, so tiles size correctly. */
+  photoContentPadding?: number;
 };
 
 export default function StepBody({
@@ -37,6 +40,7 @@ export default function StepBody({
   onToggleMulti,
   onAddPhoto,
   onRemovePhoto,
+  photoContentPadding,
 }: StepBodyProps) {
   const [query, setQuery] = useState('');
 
@@ -47,7 +51,6 @@ export default function StepBody({
           label="First name"
           placeholder="First name"
           autoCapitalize="words"
-          autoFocus
           value={form.firstName}
           onChangeText={(value) => patch({ firstName: value })}
         />
@@ -245,7 +248,14 @@ export default function StepBody({
   }
 
   if (step.kind === 'photos') {
-    return <ProfilePhotoGrid photos={form.photos} onAddPhoto={onAddPhoto} onRemovePhoto={onRemovePhoto} />;
+    return (
+      <ProfilePhotoGrid
+        photos={form.photos}
+        onAddPhoto={onAddPhoto}
+        onRemovePhoto={onRemovePhoto}
+        contentPadding={photoContentPadding}
+      />
+    );
   }
 
   return null;
@@ -341,7 +351,7 @@ function SearchField({ value, onChange, placeholder }: { value: string; onChange
   return (
     <View style={styles.searchRow}>
       <Ionicons name="search" size={18} color={palette.textSecondary} />
-      <TextInput
+      <BottomSheetTextInput
         style={styles.searchInput}
         value={value}
         onChangeText={onChange}
@@ -601,7 +611,7 @@ const styles = StyleSheet.create({
   },
   fieldInput: { fontSize: typography.body, fontWeight: '600', color: palette.textPrimary, paddingVertical: spacing.sm },
   dobRow: { flexDirection: 'row', gap: spacing.sm },
-  dobInput: { textAlign: 'center', fontSize: typography.subtitle, letterSpacing: 2 },
+  dobInput: { textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false, fontSize: typography.subtitle },
   agePreview: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   agePreviewText: { fontSize: typography.caption, fontWeight: '600', color: palette.textSecondary },
   locateButton: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', paddingVertical: spacing.xs },

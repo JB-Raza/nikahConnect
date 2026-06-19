@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import ProfilePhotoGrid from '@/components/profile-photo-grid';
 import { SettingsScaffold, settingsPalette } from '@/components/settings-kit';
 import { useAlert } from '@/features/alerts/alert-provider';
+import { capturePhoto } from '@/features/media/camera';
 import { MAX_PHOTOS, STEPS, type OnboardingForm } from '@/features/onboarding/config';
 import { useEditProfileDraft } from '@/features/profile/edit-profile-draft-context';
 import type { EditProfileFieldKey } from '@/features/profile/edit-profile-fields';
@@ -51,14 +52,20 @@ export default function EditProfileScreen() {
     });
 
   const captureFromCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      showAlert({ type: 'warning', title: 'Camera access needed', message: 'Enable camera access in Settings to take a photo.' });
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
-    if (!result.canceled) {
-      patch({ photos: [...draft.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
+    const result = await capturePhoto({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    switch (result.status) {
+      case 'unsupported':
+        showAlert({ type: 'info', title: 'Camera unavailable', message: 'The simulator has no camera. Use a real device to take a photo, or choose from your gallery.' });
+        return;
+      case 'denied':
+        showAlert({ type: 'warning', title: 'Camera access needed', message: 'Enable camera access in Settings to take a photo.' });
+        return;
+      case 'error':
+        showToast({ type: 'error', message: 'Could not open the camera.' });
+        return;
+      case 'success':
+        patch({ photos: [...draft.photos, result.uri].slice(0, MAX_PHOTOS) });
+        return;
     }
   };
 

@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
+import { capturePhoto } from '@/features/media/camera';
 import { useUserProfile } from '@/features/profile/user-profile-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
@@ -27,7 +28,7 @@ const AVATAR_SIZE = 96;
 export default function MenuTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { showAlert } = useAlert();
+  const { showAlert, showToast } = useAlert();
   const { user, name, age, photo, completionPercent, patchProfile } = useUserProfile();
 
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
@@ -43,23 +44,33 @@ export default function MenuTabScreen() {
   };
 
   const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      showAlert({
-        type: 'warning',
-        title: 'Camera access needed',
-        message: 'Enable camera access for NikahConnect in Settings to take a photo.',
-      });
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
+    const result = await capturePhoto({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled) {
-      updatePrimaryPhoto(result.assets[0].uri);
+    switch (result.status) {
+      case 'unsupported':
+        showAlert({
+          type: 'info',
+          title: 'Camera unavailable',
+          message: 'The simulator has no camera. Use a real device to take a photo, or choose from your gallery.',
+        });
+        return;
+      case 'denied':
+        showAlert({
+          type: 'warning',
+          title: 'Camera access needed',
+          message: 'Enable camera access for NikahConnect in Settings to take a photo.',
+        });
+        return;
+      case 'error':
+        showToast({ type: 'error', message: 'Could not open the camera.' });
+        return;
+      case 'success':
+        updatePrimaryPhoto(result.uri);
+        return;
     }
   };
 

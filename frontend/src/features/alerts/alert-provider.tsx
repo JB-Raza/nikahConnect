@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.chipSurfaceSoft,
   },
   buttonText: {
-    fontSize: typography.button,
+    fontSize: typography.body,
     fontWeight: '700',
   },
   buttonTextOnFill: {

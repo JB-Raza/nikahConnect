@@ -6,6 +6,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAlert } from '@/features/alerts/alert-provider';
+import { capturePhoto } from '@/features/media/camera';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -19,7 +20,7 @@ const STEPS = [
 export default function VerificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { showAlert } = useAlert();
+  const { showAlert, showToast } = useAlert();
 
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
 
@@ -32,18 +33,28 @@ export default function VerificationScreen() {
   };
 
   const takeSelfie = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      showAlert({
-        type: 'warning',
-        title: 'Camera access needed',
-        message: 'Enable camera access for NikahConnect in Settings to verify your profile.',
-      });
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ cameraType: ImagePicker.CameraType.front, quality: 0.7 });
-    if (!result.canceled) {
-      setSelfieUri(result.assets[0].uri);
+    const result = await capturePhoto({ cameraType: ImagePicker.CameraType.front, quality: 0.7 });
+    switch (result.status) {
+      case 'unsupported':
+        showAlert({
+          type: 'info',
+          title: 'Camera unavailable',
+          message: 'The simulator has no camera. Use a real device to verify your profile.',
+        });
+        return;
+      case 'denied':
+        showAlert({
+          type: 'warning',
+          title: 'Camera access needed',
+          message: 'Enable camera access for NikahConnect in Settings to verify your profile.',
+        });
+        return;
+      case 'error':
+        showToast({ type: 'error', message: 'Could not open the camera.' });
+        return;
+      case 'success':
+        setSelfieUri(result.uri);
+        return;
     }
   };
 

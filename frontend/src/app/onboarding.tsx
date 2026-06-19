@@ -1,11 +1,13 @@
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
+import { capturePhoto } from '@/features/media/camera';
 import {
   INITIAL_FORM,
   MAX_PHOTOS,
@@ -14,12 +16,14 @@ import {
   isStepValid,
   type OnboardingForm,
 } from '@/features/onboarding/config';
+import FieldRow, { formatFieldValue } from '@/features/onboarding/field-row';
+import PickerSheet from '@/features/onboarding/picker-sheet';
+import { ROW_LABEL, SECTIONS, STEP_BY_KEY } from '@/features/onboarding/sections';
 import StepBody from '@/features/onboarding/step-body';
 import { useUserProfile } from '@/features/profile/user-profile-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
-const AUTO_ADVANCE_KINDS = ['gender', 'select', 'cards'];
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -27,23 +31,34 @@ export default function OnboardingScreen() {
   const { showAlert, showToast } = useAlert();
   const { setProfile } = useUserProfile();
 
-  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<OnboardingForm>(INITIAL_FORM);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const progress = useMemo(() => new Animated.Value(0), []);
-  const total = STEPS.length;
-  const current = STEPS[step];
+  const sheetRef = useRef<BottomSheetModal>(null);
+
   const age = computeAge(form.dob);
-  const isLast = step === total - 1;
-  const valid = isStepValid(current, form, age);
-  const showFooter = !AUTO_ADVANCE_KINDS.includes(current.kind);
+  const skipChildren = form.maritalStatus === 'Never married';
+  const activeStep = activeKey ? STEP_BY_KEY[activeKey] : null;
 
-  useEffect(() => {
-    Animated.timing(progress, { toValue: (step + 1) / total, duration: 280, useNativeDriver: false }).start();
-  }, [step, total, progress]);
+  const { completedCount, total } = useMemo(() => {
+    const tracked = STEPS.filter((step) => !(step.key === 'children' && skipChildren));
+    const done = tracked.filter((step) => isStepValid(step, form, age)).length;
+    return { completedCount: done, total: tracked.length };
+  }, [form, age, skipChildren]);
+
+  const allValid = completedCount === total;
+  const remaining = total - completedCount;
+  const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   const patch = (partial: Partial<OnboardingForm>) => setForm((previous) => ({ ...previous, ...partial }));
+
+  const openSheet = (key: string) => {
+    setActiveKey(key);
+    sheetRef.current?.present();
+  };
+
+  const closeSheet = () => sheetRef.current?.dismiss();
 
   const finish = () => {
     setLoading(true);
@@ -54,50 +69,29 @@ export default function OnboardingScreen() {
     }, 900);
   };
 
-  const skipChildren = form.maritalStatus === 'Never married';
-  const isStepSkipped = (index: number) => STEPS[index]?.key === 'children' && skipChildren;
-
-  const nextStepIndex = (from: number) => {
-    let index = from + 1;
-    while (index < total && isStepSkipped(index)) index += 1;
-    return index;
-  };
-
-  const prevStepIndex = (from: number) => {
-    let index = from - 1;
-    while (index >= 0 && isStepSkipped(index)) index -= 1;
-    return index;
-  };
-
-  const advance = () => {
-    const next = nextStepIndex(step);
-    if (isLast || next >= total) {
-      finish();
-      return;
-    }
-    setStep(next);
-  };
-
   const goBack = () => {
-    const previous = prevStepIndex(step);
-    if (previous < 0) {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/auth');
-      }
-      return;
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/auth');
     }
-    setStep(previous);
   };
 
-  const selectSingle = (field: keyof OnboardingForm, value: string) => {
+  const applySingleValue = (field: keyof OnboardingForm, value: string) => {
     if (field === 'maritalStatus' && value === 'Never married') {
       patch({ maritalStatus: value, wantsChildren: 'No' });
     } else {
       patch({ [field]: value } as Partial<OnboardingForm>);
     }
-    advance();
+  };
+
+  // Inline single-selects (gender) just set the value.
+  const inlineSelectSingle = (field: keyof OnboardingForm, value: string) => applySingleValue(field, value);
+
+  // Sheet single-selects set the value and dismiss the sheet.
+  const sheetSelectSingle = (field: keyof OnboardingForm, value: string) => {
+    applySingleValue(field, value);
+    closeSheet();
   };
 
   const setGroup = (field: keyof OnboardingForm, value: string) => {
@@ -107,22 +101,29 @@ export default function OnboardingScreen() {
   const toggleMulti = (field: keyof OnboardingForm, value: string) => {
     const array = form[field] as string[];
     const exists = array.includes(value);
-    if (!exists && current.max && array.length >= current.max) {
-      showToast({ type: 'info', message: `You can choose up to ${current.max}.` });
+    const max = activeStep?.max;
+    if (!exists && max && array.length >= max) {
+      showToast({ type: 'info', message: `You can choose up to ${max}.` });
       return;
     }
     patch({ [field]: exists ? array.filter((item) => item !== value) : [...array, value] } as Partial<OnboardingForm>);
   };
 
   const captureFromCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      showAlert({ type: 'warning', title: 'Camera access needed', message: 'Enable camera access for NikahConnect in Settings to take a photo.' });
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
-    if (!result.canceled) {
-      patch({ photos: [...form.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
+    const result = await capturePhoto({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    switch (result.status) {
+      case 'unsupported':
+        showAlert({ type: 'info', title: 'Camera unavailable', message: 'The simulator has no camera. Use a real device to take a photo, or choose from your gallery.' });
+        return;
+      case 'denied':
+        showAlert({ type: 'warning', title: 'Camera access needed', message: 'Enable camera access for NikahConnect in Settings to take a photo.' });
+        return;
+      case 'error':
+        showToast({ type: 'error', message: 'Could not open the camera.' });
+        return;
+      case 'success':
+        patch({ photos: [...form.photos, result.uri].slice(0, MAX_PHOTOS) });
+        return;
     }
   };
 
@@ -160,65 +161,98 @@ export default function OnboardingScreen() {
       ],
     });
 
-  const showHelp = () =>
-    showToast({ type: 'info', message: 'Tap an option to continue. You can go back anytime with the arrow.' });
-
-  const footerLabel = (() => {
-    if (isLast) return 'Finish setup';
-    if (current.kind === 'checkbox') {
-      const count = (current.field ? (form[current.field] as string[]) : []).length;
-      return count > 0 ? `Confirm (${count})` : 'Confirm';
-    }
-    return 'Continue';
-  })();
-
-  const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.header}>
         <IconCircleButton icon="chevron-back" onPress={goBack} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Complete your profile</Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          </View>
         </View>
-        <IconCircleButton icon="help-circle-outline" onPress={showHelp} accessibilityLabel="Help" variant="onLight" size={40} iconSize={22} />
+        <Text style={styles.counter}>
+          {completedCount}/{total}
+        </Text>
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <Text style={styles.title}>{current.title}</Text>
-          {current.subtitle ? <Text style={styles.subtitle}>{current.subtitle}</Text> : null}
+          {SECTIONS.map((section) => {
+            // Photos render full-bleed (no surrounding card) to match the original 3-per-row grid.
+            const bare = section.id === 'photos';
+            const photoPadding = bare ? spacing.xl * 2 : spacing.xl * 2 + spacing.md * 2;
+            return (
+              <View key={section.id} style={styles.section}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <View style={bare ? undefined : styles.card}>
+                  {section.rows.map((row) => {
+                    if (row.key === 'children' && skipChildren) return null;
+                    const step = STEP_BY_KEY[row.key];
 
-          <View style={styles.stepBody}>
-            <StepBody
-              key={current.key}
-              step={current}
-              form={form}
-              age={age}
-              patch={patch}
-              onSelectSingle={selectSingle}
-              onSetGroup={setGroup}
-              onToggleMulti={toggleMulti}
-              onAddPhoto={addPhoto}
-              onRemovePhoto={removePhoto}
-            />
-          </View>
+                    if (row.mode === 'inline') {
+                      return (
+                        <View key={row.key} style={styles.inlineBlock}>
+                          {bare ? null : <Text style={styles.inlineLabel}>{ROW_LABEL[row.key]}</Text>}
+                          <StepBody
+                            step={step}
+                            form={form}
+                            age={age}
+                            patch={patch}
+                            onSelectSingle={inlineSelectSingle}
+                            onSetGroup={setGroup}
+                            onToggleMulti={toggleMulti}
+                            onAddPhoto={addPhoto}
+                            onRemovePhoto={removePhoto}
+                            photoContentPadding={photoPadding}
+                          />
+                        </View>
+                      );
+                    }
+
+                    return (
+                      <FieldRow
+                        key={row.key}
+                        label={ROW_LABEL[row.key]}
+                        value={formatFieldValue(step, form)}
+                        onPress={() => openSheet(row.key)}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
         </ScrollView>
 
-        {showFooter ? (
-          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-            <Pressable
-              onPress={() => valid && advance()}
-              disabled={!valid || loading}
-              style={({ pressed }) => [
-                styles.continueButton,
-                { backgroundColor: !valid || loading ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
-              ]}>
-              {loading ? <ActivityIndicator color={palette.textOnPrimary} /> : <Text style={styles.continueText}>{footerLabel}</Text>}
-            </Pressable>
-          </View>
-        ) : null}
+        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+          <Pressable
+            onPress={() => allValid && finish()}
+            disabled={!allValid || loading}
+            style={({ pressed }) => [
+              styles.finishButton,
+              { backgroundColor: !allValid || loading ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
+            ]}>
+            {loading ? (
+              <ActivityIndicator color={palette.textOnPrimary} />
+            ) : (
+              <Text style={styles.finishText}>{allValid ? 'Finish setup' : `Complete ${remaining} more`}</Text>
+            )}
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
+
+      <PickerSheet
+        ref={sheetRef}
+        step={activeStep}
+        form={form}
+        age={age}
+        patch={patch}
+        onSelectSingle={sheetSelectSingle}
+        onSetGroup={setGroup}
+        onToggleMulti={toggleMulti}
+        onDone={closeSheet}
+      />
     </View>
   );
 }
@@ -233,12 +267,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
-  progressTrack: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: palette.border, overflow: 'hidden' },
+  headerCenter: { flex: 1, gap: spacing.xs },
+  headerTitle: { fontSize: typography.subtitle, fontWeight: '800', color: palette.textPrimary },
+  progressTrack: { height: 6, borderRadius: radius.pill, backgroundColor: palette.border, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: palette.primary },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
-  title: { fontSize: typography.title, lineHeight: 36, fontWeight: '800', color: palette.textPrimary },
-  subtitle: { fontSize: typography.subtitle, lineHeight: 22, fontWeight: '500', color: palette.textSecondary, marginTop: spacing.xs },
-  stepBody: { marginTop: spacing.xl },
+  counter: { fontSize: typography.caption, fontWeight: '700', color: palette.textSecondary, minWidth: 36, textAlign: 'right' },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
+  section: { gap: spacing.sm },
+  sectionTitle: {
+    fontSize: typography.caption,
+    fontWeight: '800',
+    color: palette.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  card: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  inlineBlock: { paddingVertical: spacing.md, gap: spacing.sm },
+  inlineLabel: { fontSize: typography.subtitle, fontWeight: '700', color: palette.textPrimary },
   footer: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
@@ -246,6 +298,6 @@ const styles = StyleSheet.create({
     borderTopColor: palette.border,
     backgroundColor: palette.background,
   },
-  continueButton: { minHeight: sizing.buttonHeight, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  continueText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
+  finishButton: { minHeight: sizing.buttonHeight, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  finishText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
 });
