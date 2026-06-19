@@ -3,7 +3,8 @@ import { useRouter } from 'expo-router';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { SettingsRow, SettingsScaffold, SettingsSection, settingsPalette } from '@/components/settings-kit';
-import { radius, spacing, typography } from '@/theme/theme';
+import BrandLogo from '@/components/brand-logo';
+import { spacing, typography } from '@/theme/theme';
 
 const palette = settingsPalette;
 const APP_VERSION = '1.0.0';
@@ -13,9 +14,7 @@ export default function AboutScreen() {
   return (
     <SettingsScaffold title="About">
       <View style={styles.brand}>
-        <View style={styles.logo}>
-          <Ionicons name="heart" size={30} color="#ffffff" />
-        </View>
+        <BrandLogo size={88} style={styles.logo} />
         <Text style={styles.appName}>NikahConnect</Text>
         <Text style={styles.version}>Version {APP_VERSION}</Text>
         <Text style={styles.tagline}>Faith-first matchmaking for Muslims seeking a sincere, marriage-minded partner.</Text>
@@ -44,12 +43,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   logo: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.xl,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing.md,
   },
   appName: {

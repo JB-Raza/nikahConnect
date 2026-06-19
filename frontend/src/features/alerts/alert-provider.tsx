@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(9, 18, 14, 0.55)',
+    backgroundColor: 'rgba(8, 16, 24, 0.55)',
   },
   card: {
     width: '100%',

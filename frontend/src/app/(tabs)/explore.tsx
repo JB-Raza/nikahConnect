@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,8 +9,6 @@ import {
   Text,
   View,
   useWindowDimensions,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,7 +39,6 @@ export default function ExploreTabScreen() {
 
   const [activeTab, setActiveTab] = useState<ExploreTab>('forYou');
   const [historyFilter, setHistoryFilter] = useState<HistoryFilterId>('favourited');
-  const pagerRef = useRef<ScrollView>(null);
 
   const tabBarWidth = width - spacing.lg * 2;
   const tabWidth = tabBarWidth / TABS.length;
@@ -55,13 +52,12 @@ export default function ExploreTabScreen() {
   const openProfile = (id: string) => router.push(`/profile/${id}`);
 
   const goToTab = useCallback(
-    (tab: ExploreTab, animated = true) => {
-      const index = TABS.indexOf(tab);
+    (tab: ExploreTab) => {
       setActiveTab(tab);
-      pagerRef.current?.scrollTo({ x: index * width, animated });
+      const index = TABS.indexOf(tab);
       indicatorX.value = withTiming(spacing.lg + index * tabWidth + indicatorInset, { duration: 280 });
     },
-    [indicatorInset, indicatorX, tabWidth, width],
+    [indicatorInset, indicatorX, tabWidth],
   );
 
   useEffect(() => {
@@ -72,14 +68,6 @@ export default function ExploreTabScreen() {
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
   }));
-
-  const onPagerScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-    const nextTab = TABS[index] ?? 'forYou';
-    if (nextTab !== activeTab) {
-      setActiveTab(nextTab);
-    }
-  };
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.xs }]}>
@@ -100,19 +88,10 @@ export default function ExploreTabScreen() {
         <HistoryFilterStrip activeFilter={historyFilter} onSelectFilter={setHistoryFilter} getHistory={getHistory} />
       ) : null}
 
-      <ScrollView
-        ref={pagerRef}
-        horizontal
-        pagingEnabled
-        bounces={false}
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={onPagerScrollEnd}
-        style={styles.flex}>
-        <View style={{ width, flex: 1 }}>
+      <View style={styles.flex}>
+        {activeTab === 'forYou' ? (
           <ForYouTab cardWidth={carouselCardWidth} bottomInset={insets.bottom} onOpenProfile={openProfile} />
-        </View>
-        <View style={{ width, flex: 1 }}>
+        ) : (
           <HistoryTab
             activeFilter={historyFilter}
             cardWidth={gridCardWidth}
@@ -120,8 +99,8 @@ export default function ExploreTabScreen() {
             onOpenProfile={openProfile}
             getHistory={getHistory}
           />
-        </View>
-      </ScrollView>
+        )}
+      </View>
     </View>
   );
 }

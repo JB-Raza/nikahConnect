@@ -4,20 +4,20 @@
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-text.png",
+    "icon": "./assets/logo.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#177245",
-        "foregroundImage": "./assets/logo-text.png"
+        "backgroundColor": "#121a26",
+        "foregroundImage": "./assets/logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.frontend"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/logo-text.png"
+      "favicon": "./assets/logo.png"
     },
     "plugins": [
       "expo-router",
@@ -33,7 +33,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#121a26",
-          "image": "./assets/splash-logo.png",
+          "image": "./assets/logo-text.png",
           "imageWidth": 288,
           "resizeMode": "contain",
           "ios": {
@@ -42,7 +42,7 @@
           },
           "dark": {
             "backgroundColor": "#121a26",
-            "image": "./assets/splash-logo.png",
+            "image": "./assets/logo-text.png",
             "imageWidth": 288,
             "resizeMode": "contain"
           }

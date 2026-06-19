@@ -1,3 +1,20 @@
+# changes needed to do:
+
+the first change is the change in theme, we are using green color as theme color but i required using the blue that is being used in the logo.png and white. first updating theme and then we will do other changes required.
+
+1. change app logo icon
+2. the app should mind mobile navigation keys, right now if someone is using keys (and not jestures) to navigate on his phone, the tab bar buttons appears under it.
+3. The sign up flow should be done in a single screen (for bigger sections, we will open bottom sheets and show selected values like for personality traits, languages, height, profession etc )
+4. when writing DOB, it should auto navigate to next tab when one entry is added like, if i add 01 on day, it should activate month input, if i add 01 on month, it should activate the year input box. (adding 2 number activates next section, pressing backspace should delete previous number and if needed, activate previous input)
+5. if user selects never married, the checkbox for asking children should be off like if someone never married, how can he have children.
+6. the interests section should be divided into smaller sub sections like interests depending upon type like sports, etc, the pills should also have small icons.
+7. same for personality, add icons and group them into categories
+8. the About you section should be optional.
+9. after user has added his pictures, he should be asked to open front camera and verify his face, if his face doesn't match with any ofthe pictures he added, he should be asked to remove that picture and use a different one, obviously atleast 1 picture is required.
+10. the chatscreen should have more features as (voice and video call, adding emojis in chat, voice message)
+11. the sweet alerts are really pathetic and are so blocky and big, also the animation with which it pops is awkward and disturb the UX.
+12. the explore screen is using main filter tab, we need to make a lite version of it that filters like (most recent, most relevant (showing a match that is most relavent to your personality) etc like that. )
+
 # NikahConnect Intro Screen Implementation Workflow
 
 ## Objective
@@ -5,6 +22,7 @@
 Design and implement an intro/onboarding entry experience that feels premium, trustworthy, and Islamic-friendly while keeping performance strong on low-end devices.
 
 Primary outcomes:
+
 - Explain app value in under 8 seconds.
 - Guide users to the first action (`Continue with Google` or `Continue with Email`).
 - Keep first render fast and stable on older Android devices.
@@ -16,12 +34,14 @@ Primary outcomes:
 Short answer: **Yes, but minimally and intentionally.**
 
 Recommended approach:
+
 - Use **1 strong hero visual per slide** (not busy backgrounds).
 - Prefer **clean illustrations or UI mockups** over heavy stock photography.
 - If real people are used, ensure modest, culturally appropriate imagery and consistent art direction.
 - Avoid auto-playing videos on intro; they hurt load time and battery.
 
 Why this is best:
+
 - Visuals improve trust and retention.
 - Too many/large images reduce performance.
 - One focused image + short copy creates a premium feel without clutter.
@@ -33,16 +53,19 @@ Why this is best:
 Keep intro concise. Do not exceed 3 slides before auth options.
 
 ### Slide 1 - Core Promise
+
 - Headline: Find meaningful Muslim matches
 - Supporting text: Serious intentions, values-first profiles, and respectful interactions.
 - Visual: Branded illustration (couple silhouette, abstract Islamic geometry, soft gradients)
 
 ### Slide 2 - Safety and Privacy
+
 - Headline: Built with privacy in mind
 - Supporting text: Verification, reporting, controls for visibility, and profile protection.
 - Visual: Privacy-themed illustration/UI mockup card
 
 ### Slide 3 - Start Journey
+
 - Headline: Start your Nikah journey
 - Supporting text: Create your profile and discover compatible proposals.
 - Visual: Real app UI preview (profile + match card)
@@ -53,23 +76,27 @@ Keep intro concise. Do not exceed 3 slides before auth options.
 ## Image and Asset Guidelines
 
 ### Image Style
+
 - Soft premium palette aligned with brand (teal/green + neutral background).
 - Avoid over-saturated or loud visuals.
 - Keep composition centered so all devices crop safely.
 
 ### Technical Specs
+
 - Format: `webp` for hero images.
 - Resolution target: `1080x1920` (portrait baseline).
 - Max file size per hero: `<= 180 KB` (ideal `120-160 KB`).
 - Export 2x variants only if needed; avoid excessive local asset variants.
 
 ### Suggested Asset Set
+
 - `assets/intro/intro-1.webp`
 - `assets/intro/intro-2.webp`
 - `assets/intro/intro-3.webp`
 - Optional fallback background gradient generated in code (no image).
 
 ### Do Not
+
 - Do not use random stock photos with mixed visual styles.
 - Do not ship heavy Lottie/video for first load.
 - Do not place text inside images (keep text in UI for localization/accessibility).
@@ -87,6 +114,7 @@ Keep intro concise. Do not exceed 3 slides before auth options.
 - Add legal links near footer: `Terms` and `Privacy Policy`.
 
 Micro-interactions:
+
 - Horizontal paging with snap.
 - Subtle fade/slide animation only (`180-260ms`).
 - Haptic feedback on slide change and primary CTA (native only).
@@ -106,11 +134,13 @@ Micro-interactions:
 ## Implementation Plan (Expo + React Native)
 
 ### 1) Route and Screen Setup
+
 - Keep intro in `src/app/index.tsx` as first entry.
 - Build local components in `src/app/intro/components/` (not global yet).
 - Use Expo Router navigation to move to auth after completion.
 
 ### 2) Data-Driven Slide Config
+
 - Create a local `slides` array:
   - `id`
   - `title`
@@ -119,6 +149,7 @@ Micro-interactions:
 - Render using `FlatList` horizontal paging for performance.
 
 ### 3) Rendering Strategy
+
 - Use `expo-image` with:
   - `contentFit="cover"`
   - lightweight placeholder while loading
@@ -126,15 +157,18 @@ Micro-interactions:
 - Keep top section fixed height to avoid layout jumps.
 
 ### 4) State and Navigation
+
 - Track active index from scroll position.
 - `Skip` jumps to final slide or directly to auth (product choice).
 - On final CTA, persist intro completion flag and navigate to auth.
 
 ### 5) Persistence
+
 - Store `hasSeenIntro=true` in local storage.
 - On app start, if seen, bypass intro and open auth flow directly.
 
 ### 6) Analytics
+
 - Track:
   - `intro_viewed`
   - `intro_slide_changed`
@@ -179,6 +213,7 @@ Micro-interactions:
 Build the `Marriage` tab as a proposal-first profile viewing experience where users evaluate one recommended person at a time, then take one of three primary actions: `Pass`, `Like`, `Compliment`.
 
 This screen is content-heavy, so the implementation must keep:
+
 - high readability
 - quick actionability
 - smooth performance on low-end devices
@@ -191,6 +226,7 @@ This screen is content-heavy, so the implementation must keep:
 The profile screen has many sections. If we do not impose strong hierarchy, users will feel overwhelmed and skip without reading.
 
 Design reasoning:
+
 - Keep **decision context above the fold** (hero image, identity, key badges/chips).
 - Keep **deep compatibility context below the fold** (similarities, values, plans, lifestyle).
 - Keep **decision actions always available** via sticky buttons so users never need to scroll back.
@@ -205,14 +241,14 @@ Design reasoning:
 Two zones:
 
 1. Left zone:
-   - `Sort` button
-   - `Filter` button (opens dedicated bottom sheet with advanced filters)
-
+  - `Sort` button
+  - `Filter` button (opens dedicated bottom sheet with advanced filters)
 2. Right zone:
-   - `Boost` button
-   - `Notifications` button (navigates to stub notifications screen)
+  - `Boost` button
+  - `Notifications` button (navigates to stub notifications screen)
 
 Header behavior:
+
 - remains visible while scrolling
 - has subtle bottom border/elevation for separation
 
@@ -233,50 +269,39 @@ Header behavior:
 Order and intent:
 
 1. `Your Similarities`
-   - shared interests/traits/values
-
+  - shared interests/traits/values
 2. `About Me`
-   - short summary from owner
-
+  - short summary from owner
 3. `Core Facts`
-   - height
-   - age
-   - marital status
-   - children count
-   - format when none: `Doesn't have children`
-
+  - height
+  - age
+  - marital status
+  - children count
+  - format when none: `Doesn't have children`
 4. `Plan of Marriage`
-   - preferred chat phase duration
-   - family meeting preference/timing
-   - intended marriage timeline (`4-12 months`, etc.)
-
+  - preferred chat phase duration
+  - family meeting preference/timing
+  - intended marriage timeline (`4-12 months`, etc.)
 5. `Future Plan`
-   - wants children
-   - relocation preference (`Global`, `Home country only`, `Open to discuss`)
-
+  - wants children
+  - relocation preference (`Global`, `Home country only`, `Open to discuss`)
 6. `Interests`
-   - capsule chips
-
+  - capsule chips
 7. `Personality`
-   - personality traits chips/list
-
+  - personality traits chips/list
 8. `Education & Career`
-   - qualification
-   - occupation/profession
-   - employment details (optional)
-
+  - qualification
+  - occupation/profession
+  - employment details (optional)
 9. `Languages & Ethnicity`
-   - spoken languages
-   - ethnicity/background
-
+  - spoken languages
+  - ethnicity/background
 10. `Bio`
-    - full paragraph
-
+  - full paragraph
 11. `Compliment`
-    - non-expandable text area prompt for compliment drafting
-
+  - non-expandable text area prompt for compliment drafting
 12. Footer utility actions:
-    - Share profile
+  - Share profile
     - Mark favorite
     - Block user
     - Report user
@@ -284,11 +309,13 @@ Order and intent:
 ### 4) Sticky Bottom Action Bar (Always visible)
 
 Primary proposal actions:
+
 - `Pass` -> skip to next recommendation
 - `Like` -> like current profile
 - `Compliment` -> opens compliment bottom sheet
 
 Why sticky:
+
 - creates fast decision loop
 - avoids long-scroll friction
 - increases profile interaction rate
@@ -298,6 +325,7 @@ Why sticky:
 ## Interaction Model
 
 ### Proposal flow
+
 - App loads one recommended profile.
 - User can:
   - swipe profile images
@@ -308,19 +336,21 @@ Why sticky:
 - On `Compliment`, open sheet -> send message -> persist action.
 
 ### Bottom sheets
+
 1. `Filters` sheet:
-   - age range
-   - ethnicity
-   - height
-   - marital status
-   - children preference
-   - location radius
-   - religious practice
+  - age range
+  - ethnicity
+  - height
+  - marital status
+  - children preference
+  - location radius
+  - religious practice
 2. `Compliment` sheet:
-   - message input
-   - send/cancel
+  - message input
+  - send/cancel
 
 ### Notifications
+
 - icon tap routes to `notifications` screen (stub initially).
 
 ---
@@ -328,10 +358,12 @@ Why sticky:
 ## Component Plan (Expo Router + React Native)
 
 ### Route structure (proposed)
+
 - `src/app/(tabs)/marriage.tsx` (screen container)
 - `src/app/notifications.tsx` (stub)
 
 ### Local components for this feature
+
 - `src/app/marriage/components/marriage-header.tsx`
 - `src/app/marriage/components/profile-hero-carousel.tsx`
 - `src/app/marriage/components/profile-overlay.tsx`
@@ -344,6 +376,7 @@ Why sticky:
 - `src/app/marriage/components/compliment-sheet.tsx`
 
 Reasoning:
+
 - keep components local to feature until reused
 - avoids premature global abstractions
 - aligns with project rule for pragmatic splitting
@@ -408,6 +441,7 @@ Use one normalized object for current proposal:
 ## Delivery Phases
 
 ### Phase 1 - Structural MVP
+
 - Header with 4 actions wired
 - Hero carousel + overlay identity
 - All required sections as static/mock data
@@ -415,11 +449,13 @@ Use one normalized object for current proposal:
 - Notifications stub screen
 
 ### Phase 2 - Interaction depth
+
 - Filter sheet fields + apply/reset behavior
 - Compliment sheet submit flow
 - Pass/Like optimistic transitions
 
 ### Phase 3 - Data integration
+
 - Replace mock data with API payloads
 - persist profile actions
 - analytics events on key actions
@@ -429,46 +465,47 @@ Use one normalized object for current proposal:
 ## Confirmed Product Decisions (Locked)
 
 1. `Like` behavior:
-   - No alert/toast.
-   - Immediately move to next profile.
-
+  - No alert/toast.
+  - Immediately move to next profile.
 2. `Compliment` behavior:
-   - Minimum message length is `10` characters.
-   - Submit disabled until valid length reached.
-
+  - Minimum message length is `10` characters.
+  - Submit disabled until valid length reached.
 3. `Block` and `Report` behavior (UI phase):
-   - Remove that person from recommendation list immediately.
-   - Show next profile right away.
-   - Reporting backend/email flow will be integrated later; currently UI-only.
-
+  - Remove that person from recommendation list immediately.
+  - Show next profile right away.
+  - Reporting backend/email flow will be integrated later; currently UI-only.
 4. Religious practice labels (final):
-   - `Do not practice`
-   - `Occasionally practicing`
-   - `Actively practicing`
-   - `Strictly practicing`
-
+  - `Do not practice`
+  - `Occasionally practicing`
+  - `Actively practicing`
+  - `Strictly practicing`
 5. `Sort`:
-   - Use dedicated bottom sheet.
+  - Use dedicated bottom sheet.
 
 ---
 
 ## Filter Experience Decision (UX Recommendation)
 
 Requirement added:
+
 - Filter button should open a large filter surface with all fields.
 
 Recommended approach:
+
 - Use `@gorhom/bottom-sheet` in near full-height mode (90-95% snap point), not a separate pushed screen.
 
 Why this is better for this use case:
+
 - Keeps user in proposal context (they can quickly close and continue browsing).
 - Preserves mental model: filters are a temporary control layer over the feed, not a new destination.
 - Faster back-and-forth for iterative tuning.
 
 When full-screen push would be better:
+
 - If filter logic becomes multi-step with advanced explanations, saved presets, and educational copy.
 
 Current implementation direction:
+
 - `Filter` button opens `FilterBottomSheet` using `@gorhom/bottom-sheet`.
 - Snap points: `["90%"]` initially (can evolve to `["70%", "92%"]` later).
 - Sheet includes:
@@ -497,18 +534,20 @@ Current implementation direction:
 
 ## Current Status Snapshot
 
-| Screen | State |
-| --- | --- |
-| Intro (`index`) | Done |
-| Marriage tab | Done |
-| Explore tab | Done |
-| Chat list tab | Done |
-| Chat conversation (`chat/[id]`) | Done |
-| Filters + filter-option | Done |
-| Auth entry (`auth`) | Placeholder (skip buttons only) |
-| Menu tab | Empty placeholder |
-| Notifications | Stub |
-| Profile detail (`profile/[id]`) | Stub |
+
+| Screen                          | State                           |
+| ------------------------------- | ------------------------------- |
+| Intro (`index`)                 | Done                            |
+| Marriage tab                    | Done                            |
+| Explore tab                     | Done                            |
+| Chat list tab                   | Done                            |
+| Chat conversation (`chat/[id]`) | Done                            |
+| Filters + filter-option         | Done                            |
+| Auth entry (`auth`)             | Placeholder (skip buttons only) |
+| Menu tab                        | Empty placeholder               |
+| Notifications                   | Stub                            |
+| Profile detail (`profile/[id]`) | Stub                            |
+
 
 Guiding principle: finish the **navigation shell first** (every tab and every already-linked destination should feel real), then build the **front door** (auth + setup), then **growth/premium** surfaces.
 
@@ -519,6 +558,7 @@ Guiding principle: finish the **navigation shell first** (every tab and every al
 Goal: turn the empty Menu tab into a real settings hub. This is the last empty tab, so it unblocks the "every tab feels complete" milestone.
 
 Build in this sub-order:
+
 1. **Menu home** - header card (avatar, name, age, profile completion %), then grouped link rows.
 2. **Edit profile** - entry point (can reuse setup steps later; stub sections for now).
 3. **Account settings** - email, phone, password rows (stub actions).
@@ -529,7 +569,7 @@ Build in this sub-order:
 8. **Help & support / Community guidelines / About / Legal** - static content screens.
 9. **Logout / Delete account** - confirmation modals.
 
-Routes: `src/app/menu/*` (e.g. `menu/settings`, `menu/privacy`, `menu/account`, `menu/blocked`).
+Routes: `src/app/menu/`* (e.g. `menu/settings`, `menu/privacy`, `menu/account`, `menu/blocked`).
 Reusable pieces: `SettingsRow`, `SettingsSection`, `ToggleRow`, `CompletionMeter`.
 
 Acceptance: Menu home renders rich content, every row navigates somewhere real (even if the destination is a simple stub), back navigation is robust via `canGoBack` guard.
@@ -562,12 +602,14 @@ Goal: replace the stub (already linked from Marriage header).
 Goal: upgrade the placeholder `auth.tsx` into a real flow, then the post-signup setup wizard.
 
 Auth sub-order:
+
 1. Welcome / choose method (upgrade existing).
 2. Email sign up + Email login.
 3. Phone entry -> OTP verification.
 4. Forgot password -> reset.
 
 Profile setup wizard (multi-step, progress bar + completion %):
+
 - Gender / looking for -> name & DOB -> location -> photos -> religious level + sect -> education & profession -> height, marital status, children -> languages & ethnicity -> interests -> bio -> marriage timeline & future plans -> summary.
 
 Routes: `src/app/auth/*`, `src/app/onboarding/*`. Shared `WizardStep`, `ProgressBar`, `ChoiceChips`, `PhotoUploader` (stub picker).
@@ -604,3 +646,4 @@ Goal: the conversion/growth surfaces.
 - Mock data lives in `src/features/<feature>/data.ts` with typed view-models.
 - Every list has a designed empty state.
 - Touch targets >= 44x44; token-based colors/spacing/typography only.
+

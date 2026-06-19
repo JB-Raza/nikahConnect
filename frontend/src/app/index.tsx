@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import IntroActions from '@/app/intro/components/intro-actions';
 import ProgressDots from '@/app/intro/components/progress-dots';
 import { introSlides } from '@/app/intro/slides';
+import BrandLogo from '@/components/brand-logo';
 import { spacing, typography } from '@/theme/theme';
 
 export default function IntroScreen() {
@@ -69,9 +70,7 @@ export default function IntroScreen() {
 
       <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]} pointerEvents="box-none">
         <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <Ionicons name="heart" size={14} color="#ffffff" />
-          </View>
+          <BrandLogo size={28} />
           <Text style={styles.brandText}>NikahConnect</Text>
         </View>
 
@@ -117,14 +116,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  brandMark: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   brandText: {
     fontSize: typography.subtitle,

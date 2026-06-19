@@ -54,7 +54,7 @@ export default function BoostScreen() {
       <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg, transform: [{ translateY }] }]}>
         <View style={styles.handle} />
 
-        <LinearGradient colors={['#0f5c37', '#177245']} style={styles.boostIcon}>
+        <LinearGradient colors={['#1a6fc0', '#2486e0']} style={styles.boostIcon}>
           <Ionicons name="flash" size={28} color="#ffffff" />
         </LinearGradient>
 
@@ -99,7 +99,7 @@ export default function BoostScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: 'rgba(9,18,14,0.55)',
+    backgroundColor: 'rgba(8,16,24,0.55)',
     justifyContent: 'flex-end',
   },
   sheet: {

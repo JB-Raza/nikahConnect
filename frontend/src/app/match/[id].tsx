@@ -49,7 +49,7 @@ export default function MatchScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient colors={['#0f5c37', '#177245', '#09120e']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#1a6fc0', '#2486e0', '#0b1622']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
 
       <Pressable onPress={dismiss} hitSlop={10} style={[styles.close, { top: insets.top + spacing.sm }]} accessibilityLabel="Close">
         <Ionicons name="close" size={26} color="rgba(255,255,255,0.9)" />
@@ -72,7 +72,7 @@ export default function MatchScreen() {
 
       <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.lg }]}>
         <Pressable style={styles.primaryButton} onPress={goToChat}>
-          <Ionicons name="chatbubble" size={18} color="#177245" />
+          <Ionicons name="chatbubble" size={18} color="#2486e0" />
           <Text style={styles.primaryText}>Send a message</Text>
         </Pressable>
         <Pressable style={styles.ghostButton} onPress={dismiss}>
@@ -88,7 +88,7 @@ const AVATAR = 132;
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#09120e',
+    backgroundColor: '#0b1622',
   },
   close: {
     position: 'absolute',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radius.pill,
-    backgroundColor: '#177245',
+    backgroundColor: '#2486e0',
     borderWidth: 3,
     borderColor: '#ffffff',
     alignItems: 'center',
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   primaryText: {
     fontSize: typography.button,
     fontWeight: '800',
-    color: '#177245',
+    color: '#2486e0',
   },
   ghostButton: {
     minHeight: 52,

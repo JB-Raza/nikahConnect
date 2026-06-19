@@ -1,13 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OrDivider, PrimaryButton, SocialButton, TextLink } from '@/features/auth/ui';
-import { colors, spacing, typography } from '@/theme/theme';
-
-const palette = colors.light;
+import BrandLogo from '@/components/brand-logo';
+import { spacing, typography } from '@/theme/theme';
 
 export default function AuthWelcomeScreen() {
   const router = useRouter();
@@ -17,15 +15,13 @@ export default function AuthWelcomeScreen() {
     <View style={styles.screen}>
       <Image source={require('@/assets/intro/intro-2.jpg')} style={StyleSheet.absoluteFill} resizeMode="cover" />
       <LinearGradient
-        colors={['rgba(9,18,14,0.35)', 'rgba(9,18,14,0.2)', 'rgba(9,18,14,0.78)', 'rgba(9,18,14,0.96)']}
+        colors={['rgba(8,16,24,0.35)', 'rgba(8,16,24,0.2)', 'rgba(8,16,24,0.78)', 'rgba(8,16,24,0.96)']}
         locations={[0, 0.32, 0.7, 1]}
         style={StyleSheet.absoluteFill}
       />
 
       <View style={[styles.brandRow, { top: insets.top + spacing.md }]}>
-        <View style={styles.brandMark}>
-          <Ionicons name="heart" size={15} color="#ffffff" />
-        </View>
+        <BrandLogo size={28} />
         <Text style={styles.brandText}>NikahConnect</Text>
       </View>
 
@@ -61,7 +57,7 @@ export default function AuthWelcomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#09120e',
+    backgroundColor: '#0b1622',
   },
   brandRow: {
     position: 'absolute',
@@ -69,14 +65,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  brandMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   brandText: {
     fontSize: typography.subtitle,

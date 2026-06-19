@@ -27,7 +27,7 @@ const AVATAR_SIZE = 96;
 export default function MenuTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert } = useAlert();
   const { user, name, age, photo, completionPercent, patchProfile } = useUserProfile();
 
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
@@ -96,8 +96,6 @@ export default function MenuTabScreen() {
       ],
     });
   };
-
-  const comingSoon = (label: string) => showToast({ type: 'info', message: `${label} is coming soon.` });
 
   const chooseWhoCanMessage = () =>
     showAlert({

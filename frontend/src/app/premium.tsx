@@ -41,7 +41,7 @@ export default function PremiumScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + sizing.buttonHeight + spacing.xxl * 2 }}>
-        <LinearGradient colors={['#0f5c37', '#177245', palette.background]} locations={[0, 0.55, 1]} style={[styles.hero, { paddingTop: insets.top + spacing.xxl + spacing.lg }]}>
+        <LinearGradient colors={['#1a6fc0', '#2486e0', palette.background]} locations={[0, 0.55, 1]} style={[styles.hero, { paddingTop: insets.top + spacing.xxl + spacing.lg }]}>
           <View style={styles.crown}>
             <Ionicons name="diamond" size={30} color="#ffffff" />
           </View>

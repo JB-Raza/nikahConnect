@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(9,18,14,0.6)',
+    backgroundColor: 'rgba(8,16,24,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },

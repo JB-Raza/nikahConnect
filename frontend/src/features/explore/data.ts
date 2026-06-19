@@ -77,7 +77,7 @@ export const forYouSections: ForYouSection[] = [
 
 export type HistoryFilterId = 'favourited' | 'liked' | 'passed' | 'complimented';
 
-export const historyFilters: Array<{ id: HistoryFilterId; label: string; icon: string }> = [
+export const historyFilters: { id: HistoryFilterId; label: string; icon: string }[] = [
   { id: 'favourited', label: 'Favourited', icon: 'bookmark' },
   { id: 'liked', label: 'Liked', icon: 'heart' },
   { id: 'passed', label: 'Passed', icon: 'close-circle' },

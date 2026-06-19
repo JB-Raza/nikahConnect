@@ -100,7 +100,7 @@ export const chats: ChatItem[] = [
 
 export type ChatFilterId = 'all' | 'unread' | 'compliments' | 'online';
 
-export const chatFilters: Array<{ id: ChatFilterId; label: string }> = [
+export const chatFilters: { id: ChatFilterId; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'unread', label: 'Unread' },
   { id: 'compliments', label: 'Compliments' },
