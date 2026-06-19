@@ -1,8 +1,10 @@
 import {
   BottomSheetBackdrop,
+  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
+  type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
 import { forwardRef, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -17,6 +19,9 @@ const palette = colors.light;
 
 /** Multi-select kinds keep the sheet open and confirm via a Done button. */
 const DONE_KINDS = ['checkbox', 'chips', 'chipGroups'];
+
+/** Approx. footer height so scroll content clears the pinned Done button. */
+const FOOTER_HEIGHT = sizing.buttonHeight + spacing.md * 2;
 
 const noop = () => {};
 
@@ -47,16 +52,34 @@ const PickerSheet = forwardRef<BottomSheetModal, PickerSheetProps>(function Pick
 
   const showDone = step ? DONE_KINDS.includes(step.kind) : false;
 
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) =>
+      showDone ? (
+        <BottomSheetFooter {...props} bottomInset={0}>
+          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+            <Pressable style={({ pressed }) => [styles.doneButton, pressed && styles.donePressed]} onPress={onDone}>
+              <Text style={styles.doneText}>Done</Text>
+            </Pressable>
+          </View>
+        </BottomSheetFooter>
+      ) : null,
+    [showDone, insets.bottom, onDone],
+  );
+
   return (
     <BottomSheetModal
       ref={ref}
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
+      footerComponent={renderFooter}
       enablePanDownToClose
       handleIndicatorStyle={{ backgroundColor: palette.border }}
       backgroundStyle={{ backgroundColor: palette.surface }}>
       <BottomSheetScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + spacing.xl + (showDone ? FOOTER_HEIGHT : 0) },
+        ]}
         keyboardShouldPersistTaps="handled">
         {step ? (
           <>
@@ -76,12 +99,6 @@ const PickerSheet = forwardRef<BottomSheetModal, PickerSheetProps>(function Pick
                 onRemovePhoto={noop}
               />
             </View>
-
-            {showDone ? (
-              <Pressable style={({ pressed }) => [styles.doneButton, pressed && styles.donePressed]} onPress={onDone}>
-                <Text style={styles.doneText}>Done</Text>
-              </Pressable>
-            ) : null}
           </>
         ) : null}
       </BottomSheetScrollView>
@@ -96,8 +113,14 @@ const styles = StyleSheet.create({
   title: { fontSize: typography.titleMd, lineHeight: 30, fontWeight: '800', color: palette.textPrimary },
   subtitle: { fontSize: typography.body, lineHeight: 22, fontWeight: '500', color: palette.textSecondary, marginTop: spacing.xs },
   body: { marginTop: spacing.lg },
+  footer: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+    backgroundColor: palette.surface,
+  },
   doneButton: {
-    marginTop: spacing.xl,
     minHeight: sizing.buttonHeight,
     borderRadius: radius.md,
     backgroundColor: palette.primary,

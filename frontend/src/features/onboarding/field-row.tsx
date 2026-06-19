@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -29,14 +30,16 @@ export function formatFieldValue(step: Step, form: OnboardingForm): string | nul
 }
 
 type FieldRowProps = {
+  itemKey: string;
   label: string;
   value: string | null;
-  onPress: () => void;
+  onPress: (key: string) => void;
 };
 
-export default function FieldRow({ label, value, onPress }: FieldRowProps) {
+// Memoized so editing one field doesn't re-render every other row on the screen.
+function FieldRow({ itemKey, label, value, onPress }: FieldRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={onPress}>
+    <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => onPress(itemKey)}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.valueWrap}>
         <Text style={[styles.value, !value && styles.placeholder]} numberOfLines={1}>
@@ -47,6 +50,8 @@ export default function FieldRow({ label, value, onPress }: FieldRowProps) {
     </Pressable>
   );
 }
+
+export default memo(FieldRow);
 
 const styles = StyleSheet.create({
   row: {

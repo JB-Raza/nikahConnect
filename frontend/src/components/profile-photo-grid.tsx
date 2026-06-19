@@ -30,7 +30,7 @@ export default function ProfilePhotoGrid({
     <View style={[styles.grid, { gap }]}>
       {Array.from({ length: MAX_PHOTOS }).map((_, index) => {
         const uri = photos[index];
-        const tileStyle = { width: tileSize, height: Math.round(tileSize * 1.28) };
+        const tileStyle = { width: tileSize, height: tileSize };
 
         if (uri) {
           return (

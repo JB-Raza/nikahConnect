@@ -52,7 +52,7 @@ export default function EditProfileScreen() {
     });
 
   const captureFromCamera = async () => {
-    const result = await capturePhoto({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    const result = await capturePhoto({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     switch (result.status) {
       case 'unsupported':
         showAlert({ type: 'info', title: 'Camera unavailable', message: 'The simulator has no camera. Use a real device to take a photo, or choose from your gallery.' });
@@ -75,7 +75,7 @@ export default function EditProfileScreen() {
       showAlert({ type: 'warning', title: 'Photos access needed', message: 'Enable photo access in Settings to add a picture.' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     if (!result.canceled) {
       patch({ photos: [...draft.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
     }

@@ -1,7 +1,7 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,10 +53,10 @@ export default function OnboardingScreen() {
 
   const patch = (partial: Partial<OnboardingForm>) => setForm((previous) => ({ ...previous, ...partial }));
 
-  const openSheet = (key: string) => {
+  const openSheet = useCallback((key: string) => {
     setActiveKey(key);
     sheetRef.current?.present();
-  };
+  }, []);
 
   const closeSheet = () => sheetRef.current?.dismiss();
 
@@ -110,7 +110,7 @@ export default function OnboardingScreen() {
   };
 
   const captureFromCamera = async () => {
-    const result = await capturePhoto({ allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    const result = await capturePhoto({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     switch (result.status) {
       case 'unsupported':
         showAlert({ type: 'info', title: 'Camera unavailable', message: 'The simulator has no camera. Use a real device to take a photo, or choose from your gallery.' });
@@ -133,7 +133,7 @@ export default function OnboardingScreen() {
       showAlert({ type: 'warning', title: 'Photos access needed', message: 'Enable photo access for NikahConnect in Settings to add a picture.' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [3, 4], quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     if (!result.canceled) {
       patch({ photos: [...form.photos, result.assets[0].uri].slice(0, MAX_PHOTOS) });
     }
@@ -213,9 +213,10 @@ export default function OnboardingScreen() {
                     return (
                       <FieldRow
                         key={row.key}
+                        itemKey={row.key}
                         label={ROW_LABEL[row.key]}
                         value={formatFieldValue(step, form)}
-                        onPress={() => openSheet(row.key)}
+                        onPress={openSheet}
                       />
                     );
                   })}
