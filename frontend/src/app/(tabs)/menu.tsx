@@ -28,7 +28,7 @@ const AVATAR_SIZE = 96;
 export default function MenuTabScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showActionSheet, showPicker } = useAlert();
   const { user, name, age, photo, completionPercent, patchProfile } = useUserProfile();
 
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
@@ -96,27 +96,25 @@ export default function MenuTabScreen() {
   };
 
   const changePhoto = () => {
-    showAlert({
+    showActionSheet({
       title: 'Update profile photo',
       message: 'Choose where to get your new picture from.',
-      buttons: [
-        { text: 'Take a photo', onPress: takePhoto },
-        { text: 'Choose from gallery', onPress: pickFromGallery },
-        ...(user.profile.photos[0] ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => updatePrimaryPhoto(null) }] : []),
-        { text: 'Cancel', style: 'cancel' as const },
+      actions: [
+        { label: 'Take a photo', icon: 'camera', onPress: takePhoto },
+        { label: 'Choose from gallery', icon: 'images', onPress: pickFromGallery },
+        ...(user.profile.photos[0]
+          ? [{ label: 'Remove photo', icon: 'trash' as const, style: 'destructive' as const, onPress: () => updatePrimaryPhoto(null) }]
+          : []),
       ],
     });
   };
 
   const chooseWhoCanMessage = () =>
-    showAlert({
+    showPicker({
       title: 'Who can message me',
-      buttons: [
-        { text: 'Everyone', onPress: () => setWhoCanMessage('Everyone') },
-        { text: 'Matches only', onPress: () => setWhoCanMessage('Matches only') },
-        { text: 'Verified members', onPress: () => setWhoCanMessage('Verified members') },
-        { text: 'Cancel', style: 'cancel' },
-      ],
+      options: ['Everyone', 'Matches only', 'Verified members'],
+      selected: whoCanMessage,
+      onSelect: setWhoCanMessage,
     });
 
   const confirmLogout = () =>

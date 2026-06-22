@@ -29,13 +29,12 @@ export default function FaceVerifyModal({ visible, photos, onRemovePhoto, onVeri
   const [phase, setPhase] = useState<Phase>('intro');
   const [unmatched, setUnmatched] = useState<string[]>([]);
 
-  // Reset to the intro state every time the modal is opened.
-  useEffect(() => {
-    if (visible) {
-      setPhase('intro');
-      setUnmatched([]);
-    }
-  }, [visible]);
+  // Reset to the intro state every time the modal is shown (handled in the
+  // Modal's onShow event, so we don't call setState inside an effect).
+  const resetToIntro = () => {
+    setPhase('intro');
+    setUnmatched([]);
+  };
 
   // Auto-advance shortly after a successful match.
   useEffect(() => {
@@ -88,7 +87,7 @@ export default function FaceVerifyModal({ visible, photos, onRemovePhoto, onVeri
   const canContinue = remainingUnmatched.length === 0 && photos.length >= 1;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onShow={resetToIntro} onRequestClose={onClose}>
       <View style={[styles.screen, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={styles.topBar}>
           <Pressable onPress={onClose} hitSlop={10} accessibilityLabel="Close">

@@ -29,7 +29,7 @@ const palette = colors.light;
 export default function ChatThreadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showActionSheet } = useAlert();
   const { blockUser } = useProfileActions();
   const { chats, markChatRead } = useChats();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -154,14 +154,13 @@ export default function ChatThreadScreen() {
     });
 
   const openMenu = () =>
-    showAlert({
+    showActionSheet({
       title: chat.name,
       message: 'What would you like to do?',
-      buttons: [
-        { text: 'View profile', onPress: () => router.push(`/profile/${chat.id}`) },
-        { text: 'Block user', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report user', onPress: () => router.push({ pathname: '/report', params: { name: chat.name } }) },
-        { text: 'Cancel', style: 'cancel' },
+      actions: [
+        { label: 'View profile', icon: 'person-outline', onPress: () => router.push(`/profile/${chat.id}`) },
+        { label: 'Report user', icon: 'flag-outline', onPress: () => router.push({ pathname: '/report', params: { name: chat.name } }) },
+        { label: 'Block user', icon: 'ban-outline', style: 'destructive', onPress: confirmBlock },
       ],
     });
 

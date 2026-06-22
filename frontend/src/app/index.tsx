@@ -15,9 +15,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import IntroActions from '@/app/intro/components/intro-actions';
-import ProgressDots from '@/app/intro/components/progress-dots';
-import { introSlides } from '@/app/intro/slides';
+import IntroActions from '@/features/intro/intro-actions';
+import ProgressDots from '@/features/intro/progress-dots';
+import { introSlides } from '@/features/intro/slides';
 import BrandLogo from '@/components/brand-logo';
 import { spacing, typography } from '@/theme/theme';
 

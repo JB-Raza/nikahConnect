@@ -1,6 +1,7 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import AlertProvider from '@/features/alerts/alert-provider';
 import ChatProvider from '@/features/chat/chat-context';
@@ -13,6 +14,7 @@ import PremiumProvider from '@/features/premium/premium-context';
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
       <AlertProvider>
         <FiltersProvider>
           <UserProfileProvider>
@@ -53,6 +55,7 @@ export default function RootLayout() {
           </UserProfileProvider>
         </FiltersProvider>
       </AlertProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

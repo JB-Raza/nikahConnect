@@ -22,7 +22,7 @@ function stepOptions(key: string): string[] {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showActionSheet } = useAlert();
   const { user, setProfile } = useUserProfile();
   const { draft, beginDraft, patchDraft, endDraft } = useEditProfileDraft();
 
@@ -41,13 +41,12 @@ export default function EditProfileScreen() {
   };
 
   const addPhoto = () =>
-    showAlert({
+    showActionSheet({
       title: 'Add a photo',
       message: 'Choose where to get your photo from.',
-      buttons: [
-        { text: 'Take a photo', onPress: captureFromCamera },
-        { text: 'Choose from gallery', onPress: pickFromGallery },
-        { text: 'Cancel', style: 'cancel' },
+      actions: [
+        { label: 'Take a photo', icon: 'camera', onPress: captureFromCamera },
+        { label: 'Choose from gallery', icon: 'images', onPress: pickFromGallery },
       ],
     });
 

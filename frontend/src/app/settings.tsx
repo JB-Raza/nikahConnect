@@ -8,17 +8,17 @@ const LANGUAGES = ['English', 'اردو (Urdu)', 'العربية (Arabic)', 'Tü
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { showAlert } = useAlert();
+  const { showPicker } = useAlert();
   const [language, setLanguage] = useState('English');
   const [units, setUnits] = useState<'km' | 'mi'>('km');
 
   const chooseLanguage = () =>
-    showAlert({
+    showPicker({
       title: 'App language',
-      buttons: [
-        ...LANGUAGES.map((lang) => ({ text: lang, onPress: () => setLanguage(lang) })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
+      subtitle: 'Choose your preferred language.',
+      options: LANGUAGES,
+      selected: language,
+      onSelect: setLanguage,
     });
 
   return (

@@ -1,9 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut, FadeOutUp, withSpring, withTiming } from 'react-native-reanimated';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeInDown, FadeOut, FadeOutUp, SlideInDown, SlideOutDown, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -49,24 +47,55 @@ export type MatchAlertOptions = {
   onBrowse?: () => void;
 };
 
+export type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+export type ActionSheetAction = {
+  label: string;
+  icon?: IoniconName;
+  style?: 'default' | 'destructive';
+  onPress?: () => void;
+};
+
+export type ActionSheetOptions = {
+  title?: string;
+  message?: string;
+  actions: ActionSheetAction[];
+  cancelText?: string;
+};
+
+export type PickerChoice = { label: string; value: string };
+
+export type PickerOptions = {
+  title: string;
+  subtitle?: string;
+  options: (string | PickerChoice)[];
+  selected?: string | null;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  cancelText?: string;
+  onSelect: (value: string) => void;
+};
+
 type AlertApi = {
   showAlert: (options: AlertOptions) => void;
   showMatch: (options: MatchAlertOptions) => void;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
   showToast: (options: ToastOptions) => void;
+  showActionSheet: (options: ActionSheetOptions) => void;
+  showPicker: (options: PickerOptions) => void;
 };
 
 const AlertContext = createContext<AlertApi | null>(null);
 
-const TYPE_CONFIG: Record<AlertType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; gradient: readonly [string, string] }> = {
-  success: { icon: 'checkmark-done', color: palette.success, gradient: ['#22a866', '#15643c'] },
-  error: { icon: 'close', color: palette.danger, gradient: ['#e0584f', '#a8261f'] },
-  warning: { icon: 'alert', color: palette.warning, gradient: ['#e3a53c', '#a4610f'] },
-  info: { icon: 'information', color: palette.primary, gradient: ['#3a9bef', '#155fa8'] },
-  confirm: { icon: 'help', color: palette.primary, gradient: ['#3a9bef', '#155fa8'] },
+const TYPE_CONFIG: Record<AlertType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; tint: string }> = {
+  success: { icon: 'checkmark-circle', color: palette.success, tint: 'rgba(23, 114, 69, 0.12)' },
+  error: { icon: 'alert-circle', color: palette.danger, tint: 'rgba(187, 47, 47, 0.12)' },
+  warning: { icon: 'warning', color: palette.warning, tint: 'rgba(178, 108, 24, 0.12)' },
+  info: { icon: 'information-circle', color: palette.primary, tint: 'rgba(36, 134, 224, 0.12)' },
+  confirm: { icon: 'help-circle', color: palette.primary, tint: 'rgba(36, 134, 224, 0.12)' },
 };
 
-const MATCH_GRADIENT: readonly [string, string] = ['#3a9bef', '#155fa8'];
+const MATCH_TINT = 'rgba(36, 134, 224, 0.12)';
 
 const TOAST_CONFIG: Record<ToastType, { icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
   success: { icon: 'checkmark-circle', color: palette.success },
@@ -97,11 +126,27 @@ const CARD_EXIT = FadeOut.duration(130);
 export default function AlertProvider({ children }: { children: React.ReactNode }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [matchDialog, setMatchDialog] = useState<MatchDialogState | null>(null);
+  const [actionSheet, setActionSheet] = useState<(ActionSheetOptions & { id: number }) | null>(null);
+  const [picker, setPicker] = useState<(PickerOptions & { id: number }) | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
   const counter = useRef(0);
+  const insets = useContext(SafeAreaInsetsContext);
+  const bottomInset = insets?.bottom ?? 0;
 
   const closeDialog = useCallback(() => setDialog(null), []);
   const closeMatchDialog = useCallback(() => setMatchDialog(null), []);
+  const closeActionSheet = useCallback(() => setActionSheet(null), []);
+  const closePicker = useCallback(() => setPicker(null), []);
+
+  const showActionSheet = useCallback((options: ActionSheetOptions) => {
+    counter.current += 1;
+    setActionSheet({ ...options, id: counter.current });
+  }, []);
+
+  const showPicker = useCallback((options: PickerOptions) => {
+    counter.current += 1;
+    setPicker({ ...options, id: counter.current });
+  }, []);
 
   const showAlert = useCallback((options: AlertOptions) => {
     counter.current += 1;
@@ -149,7 +194,10 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
     [dismissToast],
   );
 
-  const api = useMemo<AlertApi>(() => ({ showAlert, showMatch, confirm, showToast }), [showAlert, showMatch, confirm, showToast]);
+  const api = useMemo<AlertApi>(
+    () => ({ showAlert, showMatch, confirm, showToast, showActionSheet, showPicker }),
+    [showAlert, showMatch, confirm, showToast, showActionSheet, showPicker],
+  );
 
   const buttons = dialog?.buttons?.length ? dialog.buttons : [{ text: 'OK' } as AlertButton];
   const isRow = buttons.length === 2;
@@ -183,16 +231,15 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
         {dialog ? (
           <View style={styles.modalRoot}>
             <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdrop}>
-              <BlurView intensity={45} tint="dark" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
               <View style={styles.backdropTint} />
             </Pressable>
 
             <Animated.View entering={cardEntering} exiting={CARD_EXIT} style={styles.cardContainer}>
               <View style={styles.card}>
-                <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
-                <View style={styles.cardTint} />
-
                 <View style={styles.cardContent}>
+                  <View style={[styles.iconChip, { backgroundColor: config.tint }]}>
+                    <Ionicons name={config.icon} size={28} color={config.color} />
+                  </View>
                   <Text style={styles.title}>{dialog.title}</Text>
                   {dialog.message ? <Text style={styles.message}>{dialog.message}</Text> : null}
 
@@ -211,12 +258,6 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
                   )}
                 </View>
               </View>
-
-              <View style={styles.badgeWrap} pointerEvents="none">
-                <LinearGradient colors={config.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
-                  <Ionicons name={config.icon} size={30} color="#ffffff" />
-                </LinearGradient>
-              </View>
             </Animated.View>
           </View>
         ) : null}
@@ -226,16 +267,15 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
         {matchDialog ? (
           <View style={styles.modalRoot}>
             <Pressable style={StyleSheet.absoluteFill} onPress={closeMatchDialog}>
-              <BlurView intensity={45} tint="dark" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
               <View style={styles.backdropTint} />
             </Pressable>
 
             <Animated.View entering={cardEntering} exiting={CARD_EXIT} style={styles.cardContainer}>
               <View style={styles.card}>
-                <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
-                <View style={styles.cardTint} />
-
                 <View style={styles.cardContent}>
+                  <View style={[styles.iconChip, { backgroundColor: MATCH_TINT }]}>
+                    <Ionicons name="heart" size={28} color={palette.primary} />
+                  </View>
                   <Text style={styles.matchKicker}>It&apos;s a match!</Text>
                   <Text style={styles.title}>You and {matchDialog.name} liked each other</Text>
                   <Text style={styles.message}>Make the first move and start with a warm salam.</Text>
@@ -254,14 +294,48 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
                   </View>
                 </View>
               </View>
-
-              <View style={styles.badgeWrap} pointerEvents="none">
-                <LinearGradient colors={MATCH_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
-                  <Ionicons name="heart" size={30} color="#ffffff" />
-                </LinearGradient>
-              </View>
             </Animated.View>
           </View>
+        ) : null}
+      </Modal>
+
+      <Modal
+        transparent
+        visible={actionSheet !== null}
+        animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={closeActionSheet}>
+        {actionSheet ? (
+          <ActionSheetView
+            data={actionSheet}
+            bottomInset={bottomInset}
+            onClose={closeActionSheet}
+            onRun={(action) => {
+              closeActionSheet();
+              action.onPress?.();
+            }}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal
+        transparent
+        visible={picker !== null}
+        animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={closePicker}>
+        {picker ? (
+          <PickerSheetView
+            data={picker}
+            bottomInset={bottomInset}
+            onClose={closePicker}
+            onPick={(value) => {
+              closePicker();
+              picker.onSelect(value);
+            }}
+          />
         ) : null}
       </Modal>
 
@@ -323,6 +397,130 @@ function ToastCard({ toast, onPress }: { toast: ToastState; onPress: () => void 
   );
 }
 
+function ActionSheetView({
+  data,
+  bottomInset,
+  onClose,
+  onRun,
+}: {
+  data: ActionSheetOptions;
+  bottomInset: number;
+  onClose: () => void;
+  onRun: (action: ActionSheetAction) => void;
+}) {
+  return (
+    <View style={styles.sheetRoot}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <View style={styles.sheetBackdrop} />
+      </Pressable>
+
+      <Animated.View
+        entering={SlideInDown.duration(240)}
+        exiting={SlideOutDown.duration(160)}
+        style={[styles.sheetCard, { paddingBottom: bottomInset + spacing.sm }]}>
+        <View style={styles.sheetHandle} />
+        {data.title ? <Text style={styles.sheetTitle}>{data.title}</Text> : null}
+        {data.message ? <Text style={styles.sheetMessage}>{data.message}</Text> : null}
+
+        <View style={styles.sheetList}>
+          {data.actions.map((action, index) => {
+            const destructive = action.style === 'destructive';
+            return (
+              <Pressable
+                key={`${action.label}-${index}`}
+                onPress={() => onRun(action)}
+                style={({ pressed }) => [styles.sheetRow, pressed && styles.sheetRowPressed]}>
+                {action.icon ? (
+                  <Ionicons name={action.icon} size={20} color={destructive ? palette.danger : palette.primary} style={styles.sheetRowIcon} />
+                ) : null}
+                <Text style={[styles.sheetRowLabel, destructive && styles.sheetRowDanger]}>{action.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Pressable onPress={onClose} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
+          <Text style={styles.sheetCancelText}>{data.cancelText ?? 'Cancel'}</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+function PickerSheetView({
+  data,
+  bottomInset,
+  onClose,
+  onPick,
+}: {
+  data: PickerOptions;
+  bottomInset: number;
+  onClose: () => void;
+  onPick: (value: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const choices: PickerChoice[] = data.options.map((option) =>
+    typeof option === 'string' ? { label: option, value: option } : option,
+  );
+  const q = query.trim().toLowerCase();
+  const filtered = q ? choices.filter((choice) => choice.label.toLowerCase().includes(q)) : choices;
+
+  return (
+    <View style={styles.sheetRoot}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <View style={styles.sheetBackdrop} />
+      </Pressable>
+
+      <Animated.View
+        entering={SlideInDown.duration(240)}
+        exiting={SlideOutDown.duration(160)}
+        style={[styles.sheetCard, styles.pickerCard, { paddingBottom: bottomInset + spacing.sm }]}>
+        <View style={styles.sheetHandle} />
+        <Text style={styles.sheetTitle}>{data.title}</Text>
+        {data.subtitle ? <Text style={styles.sheetMessage}>{data.subtitle}</Text> : null}
+
+        {data.searchable ? (
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={18} color={palette.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder={data.searchPlaceholder ?? 'Search'}
+              placeholderTextColor={palette.textSecondary}
+              autoCorrect={false}
+            />
+          </View>
+        ) : null}
+
+        <ScrollView
+          style={styles.pickerScroll}
+          contentContainerStyle={styles.pickerScrollContent}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}>
+          {filtered.map((choice) => {
+            const active = data.selected === choice.value;
+            return (
+              <Pressable
+                key={choice.value}
+                onPress={() => onPick(choice.value)}
+                style={({ pressed }) => [styles.pickerRow, pressed && styles.sheetRowPressed]}>
+                <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>{choice.label}</Text>
+                {active ? <Ionicons name="checkmark" size={20} color={palette.primary} /> : null}
+              </Pressable>
+            );
+          })}
+          {filtered.length === 0 ? <Text style={styles.pickerEmpty}>No matches</Text> : null}
+        </ScrollView>
+
+        <Pressable onPress={onClose} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
+          <Text style={styles.sheetCancelText}>{data.cancelText ?? 'Cancel'}</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
 export function useAlert(): AlertApi {
   const context = useContext(AlertContext);
   if (!context) {
@@ -344,58 +542,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(9, 16, 26, 0.18)',
+    backgroundColor: 'rgba(11, 26, 48, 0.45)',
   },
   cardContainer: {
     width: '100%',
-    maxWidth: 326,
-    marginTop: 30,
+    maxWidth: 360,
+    alignSelf: 'center',
     shadowColor: '#0a1422',
-    shadowOpacity: 0.24,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 16,
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 14,
   },
   card: {
     borderRadius: radius.xl,
     overflow: 'hidden',
+    backgroundColor: palette.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.65)',
-  },
-  cardTint: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderColor: palette.border,
   },
   cardContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: 42,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
     alignItems: 'center',
   },
-  badgeWrap: {
-    position: 'absolute',
-    top: -30,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  badge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  iconChip: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#0a1422',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 10,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: 19,
@@ -499,5 +677,138 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     fontWeight: '500',
     color: palette.textPrimary,
+  },
+  sheetRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(11, 26, 48, 0.40)',
+  },
+  sheetCard: {
+    backgroundColor: palette.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  pickerCard: {
+    maxHeight: '78%',
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: radius.pill,
+    backgroundColor: palette.border,
+    marginBottom: spacing.sm,
+  },
+  sheetTitle: {
+    fontSize: typography.subtitle,
+    fontWeight: '800',
+    color: palette.textPrimary,
+    textAlign: 'center',
+  },
+  sheetMessage: {
+    fontSize: typography.body,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xxs,
+  },
+  sheetList: {
+    marginTop: spacing.md,
+    gap: spacing.xxs,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 52,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+  },
+  sheetRowPressed: {
+    backgroundColor: palette.chipSurfaceSoft,
+  },
+  sheetRowIcon: {
+    width: 22,
+    textAlign: 'center',
+  },
+  sheetRowLabel: {
+    flex: 1,
+    fontSize: typography.subtitle,
+    fontWeight: '600',
+    color: palette.textPrimary,
+  },
+  sheetRowDanger: {
+    color: palette.danger,
+  },
+  sheetCancel: {
+    minHeight: 52,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.chipSurfaceSoft,
+    marginTop: spacing.sm,
+  },
+  sheetCancelPressed: {
+    backgroundColor: palette.border,
+  },
+  sheetCancelText: {
+    fontSize: typography.button,
+    fontWeight: '800',
+    color: palette.textPrimary,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderWidth: 1.5,
+    borderColor: palette.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    marginTop: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: typography.body,
+    fontWeight: '500',
+    color: palette.textPrimary,
+    paddingVertical: spacing.sm,
+  },
+  pickerScroll: {
+    marginTop: spacing.sm,
+  },
+  pickerScrollContent: {
+    paddingBottom: spacing.xs,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 50,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+  },
+  pickerLabel: {
+    flex: 1,
+    fontSize: typography.subtitle,
+    fontWeight: '600',
+    color: palette.textPrimary,
+  },
+  pickerLabelActive: {
+    color: palette.primary,
+    fontWeight: '800',
+  },
+  pickerEmpty: {
+    textAlign: 'center',
+    color: palette.textSecondary,
+    paddingVertical: spacing.lg,
   },
 });

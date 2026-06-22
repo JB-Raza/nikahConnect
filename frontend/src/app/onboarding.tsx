@@ -30,7 +30,7 @@ const palette = colors.light;
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showToast, showActionSheet } = useAlert();
   const { setProfile } = useUserProfile();
 
   const [loading, setLoading] = useState(false);
@@ -194,13 +194,12 @@ export default function OnboardingScreen() {
   };
 
   const addPhoto = () =>
-    showAlert({
+    showActionSheet({
       title: 'Add a photo',
       message: 'Choose where to get your photo from.',
-      buttons: [
-        { text: 'Take a photo', onPress: captureFromCamera },
-        { text: 'Choose from gallery', onPress: pickFromGallery },
-        { text: 'Cancel', style: 'cancel' },
+      actions: [
+        { label: 'Take a photo', icon: 'camera', onPress: captureFromCamera },
+        { label: 'Choose from gallery', icon: 'images', onPress: pickFromGallery },
       ],
     });
 
