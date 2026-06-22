@@ -18,7 +18,7 @@ import StepBody from './step-body';
 const palette = colors.light;
 
 /** Multi-select kinds keep the sheet open and confirm via a Done button. */
-const DONE_KINDS = ['checkbox', 'chips', 'chipGroups'];
+const DONE_KINDS = ['checkbox', 'chips', 'chipGroups', 'chipCategories'];
 
 /** Approx. footer height so scroll content clears the pinned Done button. */
 const FOOTER_HEIGHT = sizing.buttonHeight + spacing.md * 2;

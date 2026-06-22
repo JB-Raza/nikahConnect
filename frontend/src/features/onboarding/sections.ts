@@ -38,6 +38,8 @@ export const ROW_LABEL: Record<string, string> = {
   photos: 'Photos',
 };
 
+export const SECTION_BY_ROW: Record<string, string> = {};
+
 export const SECTIONS: FormSection[] = [
   {
     id: 'basics',
@@ -103,3 +105,9 @@ export const SECTIONS: FormSection[] = [
     rows: [{ key: 'photos', mode: 'inline' }],
   },
 ];
+
+for (const section of SECTIONS) {
+  for (const row of section.rows) {
+    SECTION_BY_ROW[row.key] = section.id;
+  }
+}

@@ -1,6 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -13,14 +19,16 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import FilterButton from '@/components/filter-button';
 import ProfileCard from '@/components/profile-card';
 import {
   forYouSections,
   historyFilters,
+  historySorts,
+  sortHistory,
   type ExploreProfile,
   type ForYouSection,
   type HistoryFilterId,
+  type HistorySortId,
 } from '@/features/explore/data';
 import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -39,6 +47,14 @@ export default function ExploreTabScreen() {
 
   const [activeTab, setActiveTab] = useState<ExploreTab>('forYou');
   const [historyFilter, setHistoryFilter] = useState<HistoryFilterId>('favourited');
+  const [historySort, setHistorySort] = useState<HistorySortId>('recent');
+
+  const sortSheetRef = useRef<BottomSheetModal>(null);
+  const openSortSheet = () => sortSheetRef.current?.present();
+  const selectSort = (sort: HistorySortId) => {
+    setHistorySort(sort);
+    sortSheetRef.current?.dismiss();
+  };
 
   const tabBarWidth = width - spacing.lg * 2;
   const tabWidth = tabBarWidth / TABS.length;
@@ -73,7 +89,14 @@ export default function ExploreTabScreen() {
     <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.header}>
         <Text style={styles.screenTitle}>Explore</Text>
-        <FilterButton />
+        {activeTab === 'history' ? (
+          <Pressable style={styles.sortButton} onPress={openSortSheet} accessibilityLabel="Sort history">
+            <Ionicons name="filter" size={16} color={palette.primary} />
+            <Text style={styles.sortButtonText}>
+              {historySorts.find((option) => option.id === historySort)?.label ?? 'Sort'}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={styles.tabBar}>
@@ -94,6 +117,7 @@ export default function ExploreTabScreen() {
         ) : (
           <HistoryTab
             activeFilter={historyFilter}
+            sort={historySort}
             cardWidth={gridCardWidth}
             bottomInset={insets.bottom}
             onOpenProfile={openProfile}
@@ -101,6 +125,8 @@ export default function ExploreTabScreen() {
           />
         )}
       </View>
+
+      <HistorySortSheet ref={sortSheetRef} activeSort={historySort} onSelect={selectSort} />
     </View>
   );
 }
@@ -124,6 +150,47 @@ function ForYouTab({
     </ScrollView>
   );
 }
+
+const HistorySortSheet = forwardRef<BottomSheetModal, { activeSort: HistorySortId; onSelect: (id: HistorySortId) => void }>(
+  function HistorySortSheet({ activeSort, onSelect }, ref) {
+    const insets = useSafeAreaInsets();
+    const renderBackdrop = useCallback(
+      (props: BottomSheetBackdropProps) => (
+        <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} pressBehavior="close" />
+      ),
+      [],
+    );
+
+    return (
+      <BottomSheetModal
+        ref={ref}
+        backdropComponent={renderBackdrop}
+        handleIndicatorStyle={{ backgroundColor: palette.border }}
+        backgroundStyle={{ backgroundColor: palette.surface }}>
+        <BottomSheetView style={[styles.sheetContent, { paddingBottom: insets.bottom + spacing.lg }]}>
+          <Text style={styles.sheetTitle}>Sort by</Text>
+          {historySorts.map((option) => {
+            const active = option.id === activeSort;
+            return (
+              <Pressable
+                key={option.id}
+                style={({ pressed }) => [styles.sortRow, pressed && styles.sortRowPressed]}
+                onPress={() => onSelect(option.id)}>
+                <Ionicons
+                  name={option.icon as React.ComponentProps<typeof Ionicons>['name']}
+                  size={20}
+                  color={active ? palette.primary : palette.textSecondary}
+                />
+                <Text style={[styles.sortLabel, active && styles.sortLabelActive]}>{option.label}</Text>
+                {active ? <Ionicons name="checkmark" size={20} color={palette.primary} /> : null}
+              </Pressable>
+            );
+          })}
+        </BottomSheetView>
+      </BottomSheetModal>
+    );
+  },
+);
 
 function SectionView({
   section,
@@ -242,18 +309,20 @@ function HistoryFilterStrip({
 
 function HistoryTab({
   activeFilter,
+  sort,
   cardWidth,
   bottomInset,
   onOpenProfile,
   getHistory,
 }: {
   activeFilter: HistoryFilterId;
+  sort: HistorySortId;
   cardWidth: number;
   bottomInset: number;
   onOpenProfile: (id: string) => void;
   getHistory: (filter: HistoryFilterId) => ExploreProfile[];
 }) {
-  const results = getHistory(activeFilter);
+  const results = useMemo(() => sortHistory(getHistory(activeFilter), sort), [getHistory, activeFilter, sort]);
   const activeLabel = historyFilters.find((filter) => filter.id === activeFilter)?.label ?? '';
 
   return (
@@ -313,6 +382,53 @@ const styles = StyleSheet.create({
     fontSize: typography.title,
     fontWeight: '800',
     color: palette.textPrimary,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.md,
+    height: 38,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  sortButtonText: {
+    fontSize: typography.caption,
+    fontWeight: '700',
+    color: palette.primary,
+  },
+  sheetContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    gap: spacing.xxs,
+  },
+  sheetTitle: {
+    fontSize: typography.titleMd,
+    fontWeight: '800',
+    color: palette.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.border,
+  },
+  sortRowPressed: {
+    opacity: 0.6,
+  },
+  sortLabel: {
+    flex: 1,
+    fontSize: typography.subtitle,
+    fontWeight: '700',
+    color: palette.textPrimary,
+  },
+  sortLabelActive: {
+    color: palette.primary,
   },
   tabBar: {
     paddingHorizontal: spacing.lg,

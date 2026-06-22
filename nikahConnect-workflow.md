@@ -2,18 +2,18 @@
 
 the first change is the change in theme, we are using green color as theme color but i required using the blue that is being used in the logo.png and white. first updating theme and then we will do other changes required.
 
-- [x] 1. change app logo icon
-- [x] 2. the app should mind mobile navigation keys, right now if someone is using keys (and not jestures) to navigate on his phone, the tab bar buttons appears under it.
-- [ ] 3. The sign up flow should be done in a single screen (for bigger sections, we will open bottom sheets and show selected values like for personality traits, languages, height, profession etc )
-- [x] 4. when writing DOB, it should auto navigate to next tab when one entry is added like, if i add 01 on day, it should activate month input, if i add 01 on month, it should activate the year input box. (adding 2 number activates next section, pressing backspace should delete previous number and if needed, activate previous input)
-- [x] 5. if user selects never married, the checkbox for asking children should be off like if someone never married, how can he have children.
-- [ ] 6. the interests section should be divided into smaller sub sections like interests depending upon type like sports, etc, the pills should also have small icons.
-- [ ] 7. same for personality, add icons and group them into categories
-- [x] 8. the About you section should be optional.
-- [ ] 9. after user has added his pictures, he should be asked to open front camera and verify his face, if his face doesn't match with any ofthe pictures he added, he should be asked to remove that picture and use a different one, obviously atleast 1 picture is required. _(partial: selfie/front-camera screen exists at `verification.tsx` via Menu, but it is not wired into the post-photo onboarding step and has no face-matching logic)_
-- [ ] 10. the chatscreen should have more features as (voice and video call, adding emojis in chat, voice message)
-- [x] 11. the sweet alerts are really pathetic and are so blocky and big, also the animation with which it pops is awkward and disturb the UX.
-- [ ] 12. the explore screen is using main filter tab, we need to make a lite version of it that filters like (most recent, most relevant (showing a match that is most relavent to your personality) etc like that. )
+- 1. change app logo icon
+- 1. the app should mind mobile navigation keys, right now if someone is using keys (and not jestures) to navigate on his phone, the tab bar buttons appears under it.
+- 1. The sign up flow should be done in a single screen (for bigger sections, we will open bottom sheets and show selected values like for personality traits, languages, height, profession etc )
+- 1. when writing DOB, it should auto navigate to next tab when one entry is added like, if i add 01 on day, it should activate month input, if i add 01 on month, it should activate the year input box. (adding 2 number activates next section, pressing backspace should delete previous number and if needed, activate previous input)
+- 1. if user selects never married, the checkbox for asking children should be off like if someone never married, how can he have children.
+- 1. the interests section should be divided into smaller sub sections like interests depending upon type like sports, etc, the pills should also have small icons.
+- 1. same for personality, add icons and group them into categories
+- 1. the About you section should be optional.
+- 1. after user has added his pictures, he should be asked to open front camera and verify his face, if his face doesn't match with any ofthe pictures he added, he should be asked to remove that picture and use a different one, obviously atleast 1 picture is required. *(done — full flow wired into onboarding Finish step via `FaceVerifyModal`: selfie capture → checking → pass / fail+remove-photo loop, ≥1 photo enforced. The actual face-matching is stubbed behind `verifyFaces()` in `src/features/verification/face-match.ts` (simulated result + dev toggle); swap that one function for the real backend/ML call later.)*
+- 1. the chatscreen should have more features as (voice and video call, adding emojis in chat, voice message)
+- 1. the sweet alerts are really pathetic and are so blocky and big, also the animation with which it pops is awkward and disturb the UX.
+- 1. the explore screen is using main filter tab, we need to make a lite version of it that filters like (most recent, most relevant (showing a match that is most relavent to your personality) etc like that. )
 
 # NikahConnect Intro Screen Implementation Workflow
 
@@ -612,7 +612,7 @@ Profile setup wizard (multi-step, progress bar + completion %):
 
 - Gender / looking for -> name & DOB -> location -> photos -> religious level + sect -> education & profession -> height, marital status, children -> languages & ethnicity -> interests -> bio -> marriage timeline & future plans -> summary.
 
-Routes: `src/app/auth/*`, `src/app/onboarding/*`. Shared `WizardStep`, `ProgressBar`, `ChoiceChips`, `PhotoUploader` (stub picker).
+Routes: `src/app/auth/`*, `src/app/onboarding/*`. Shared `WizardStep`, `ProgressBar`, `ChoiceChips`, `PhotoUploader` (stub picker).
 
 ---
 

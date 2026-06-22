@@ -42,6 +42,7 @@ export default function RootLayout() {
                 <Stack.Screen name="edit-profile-field" options={{ presentation: 'card', animation: 'slide_from_right' }} />
                 <Stack.Screen name="report" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="boost" options={{ presentation: 'transparentModal', animation: 'fade' }} />
+                <Stack.Screen name="call" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="match/[id]" options={{ presentation: 'transparentModal', animation: 'fade' }} />
               </Stack>
               </BottomSheetModalProvider>

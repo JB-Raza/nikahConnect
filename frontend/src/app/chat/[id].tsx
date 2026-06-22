@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -45,12 +46,26 @@ export default function ChatThreadScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => (id ? getChatThread(id) : []));
   const [draft, setDraft] = useState('');
+  const [showEmojis, setShowEmojis] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const recordTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (id) {
       markChatRead(id);
     }
   }, [id, markChatRead]);
+
+  useEffect(
+    () => () => {
+      if (recordTimer.current) {
+        clearInterval(recordTimer.current);
+      }
+    },
+    [],
+  );
 
   if (!chat) {
     return (
@@ -75,8 +90,49 @@ export default function ChatThreadScreen() {
       { id: `local-${Date.now()}`, sender: 'me', text, time: 'now', kind: 'text' },
     ]);
     setDraft('');
+    setShowEmojis(false);
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   };
+
+  const startCall = (mode: 'voice' | 'video') =>
+    router.push({ pathname: '/call', params: { id: chat.id, name: chat.name, mode } });
+
+  const insertEmoji = (emoji: string) => setDraft((previous) => previous + emoji);
+
+  const stopRecordTimer = () => {
+    if (recordTimer.current) {
+      clearInterval(recordTimer.current);
+      recordTimer.current = null;
+    }
+  };
+
+  const startRecording = () => {
+    setShowEmojis(false);
+    setRecordSeconds(0);
+    setRecording(true);
+    recordTimer.current = setInterval(() => setRecordSeconds((value) => value + 1), 1000);
+  };
+
+  const cancelRecording = () => {
+    stopRecordTimer();
+    setRecording(false);
+    setRecordSeconds(0);
+  };
+
+  const sendVoice = () => {
+    stopRecordTimer();
+    const durationSec = Math.max(1, recordSeconds);
+    setMessages((previous) => [
+      ...previous,
+      { id: `local-${Date.now()}`, sender: 'me', text: '', time: 'now', kind: 'voice', durationSec },
+    ]);
+    setRecording(false);
+    setRecordSeconds(0);
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+  };
+
+  const toggleVoicePlayback = (messageId: string) =>
+    setPlayingVoiceId((current) => (current === messageId ? null : messageId));
 
   const confirmBlock = () =>
     showAlert({
@@ -130,7 +186,11 @@ export default function ChatThreadScreen() {
           </View>
         </Pressable>
 
-        <IconCircleButton icon="ellipsis-vertical" onPress={openMenu} accessibilityLabel="Chat options" variant="onLight" size={40} iconSize={20} />
+        <View style={styles.headerActions}>
+          <IconCircleButton icon="call" onPress={() => startCall('voice')} accessibilityLabel="Voice call" variant="onLight" size={40} iconSize={20} />
+          <IconCircleButton icon="videocam" onPress={() => startCall('video')} accessibilityLabel="Video call" variant="onLight" size={40} iconSize={20} />
+          <IconCircleButton icon="ellipsis-vertical" onPress={openMenu} accessibilityLabel="Chat options" variant="onLight" size={40} iconSize={20} />
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -145,28 +205,90 @@ export default function ChatThreadScreen() {
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={<MatchBanner name={chat.name} />}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-          renderItem={({ item }) => <MessageBubble message={item} name={chat.name} />}
+          renderItem={({ item }) => (
+            <MessageBubble
+              message={item}
+              name={chat.name}
+              isPlaying={playingVoiceId === item.id}
+              onToggleVoice={() => toggleVoicePlayback(item.id)}
+            />
+          )}
         />
 
+        {showEmojis && !recording ? <EmojiPanel onSelect={insertEmoji} /> : null}
+
         <View style={[styles.inputBar, { paddingBottom: insets.bottom + spacing.xs }]}>
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              placeholder={`Message ${chat.name}...`}
-              placeholderTextColor={palette.textSecondary}
-              value={draft}
-              onChangeText={setDraft}
-              multiline
-            />
-          </View>
-          <Pressable
-            onPress={handleSend}
-            disabled={!canSend}
-            style={[styles.sendButton, { backgroundColor: canSend ? palette.primary : palette.border }]}>
-            <Ionicons name="send" size={18} color={canSend ? '#ffffff' : palette.textSecondary} />
-          </Pressable>
+          {recording ? (
+            <View style={styles.recordingBar}>
+              <Pressable onPress={cancelRecording} hitSlop={8} style={styles.recordCancel} accessibilityLabel="Cancel recording">
+                <Ionicons name="trash-outline" size={22} color={palette.danger} />
+              </Pressable>
+              <View style={styles.recordingMeta}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingTime}>{formatDuration(recordSeconds)}</Text>
+                <Text style={styles.recordingHint}>Recording voice message…</Text>
+              </View>
+              <Pressable onPress={sendVoice} style={[styles.sendButton, { backgroundColor: palette.primary }]} accessibilityLabel="Send voice message">
+                <Ionicons name="send" size={18} color="#ffffff" />
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <Pressable onPress={() => setShowEmojis((value) => !value)} hitSlop={8} style={styles.emojiToggle} accessibilityLabel="Emoji">
+                <Ionicons name={showEmojis ? 'close-circle-outline' : 'happy-outline'} size={26} color={palette.textSecondary} />
+              </Pressable>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={`Message ${chat.name}...`}
+                  placeholderTextColor={palette.textSecondary}
+                  value={draft}
+                  onChangeText={setDraft}
+                  onFocus={() => setShowEmojis(false)}
+                  multiline
+                />
+              </View>
+              {canSend ? (
+                <Pressable onPress={handleSend} style={[styles.sendButton, { backgroundColor: palette.primary }]} accessibilityLabel="Send">
+                  <Ionicons name="send" size={18} color="#ffffff" />
+                </Pressable>
+              ) : (
+                <Pressable onPress={startRecording} style={[styles.sendButton, styles.micButton]} accessibilityLabel="Record voice message">
+                  <Ionicons name="mic" size={20} color={palette.primary} />
+                </Pressable>
+              )}
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+const EMOJIS = [
+  '😊', '😀', '😅', '🙂', '😍', '🥰', '😎', '🤝', '👍', '🙏', '❤️', '💐',
+  '🌸', '✨', '🎉', '☕', '📚', '🕌', '🌙', '⭐', '😄', '😇', '🤲', '💬',
+  '🌹', '🏡', '🍽️', '✈️', '😂', '🤍', '🌷', '🫶',
+];
+
+const VOICE_WAVE = [8, 14, 20, 12, 18, 10, 22, 14, 9, 16, 12, 20, 10, 15, 8, 18, 11];
+
+function formatDuration(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function EmojiPanel({ onSelect }: { onSelect: (emoji: string) => void }) {
+  return (
+    <View style={styles.emojiPanel}>
+      <ScrollView contentContainerStyle={styles.emojiGrid} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {EMOJIS.map((emoji) => (
+          <Pressable key={emoji} style={styles.emojiCell} onPress={() => onSelect(emoji)}>
+            <Text style={styles.emojiText}>{emoji}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -183,8 +305,44 @@ function MatchBanner({ name }: { name: string }) {
   );
 }
 
-function MessageBubble({ message, name }: { message: ChatMessage; name: string }) {
+function MessageBubble({
+  message,
+  name,
+  isPlaying,
+  onToggleVoice,
+}: {
+  message: ChatMessage;
+  name: string;
+  isPlaying: boolean;
+  onToggleVoice: () => void;
+}) {
   const isMe = message.sender === 'me';
+
+  if (message.kind === 'voice') {
+    return (
+      <View style={[styles.bubbleRow, isMe ? styles.rowEnd : styles.rowStart]}>
+        <View style={[styles.voiceBubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+          <Pressable
+            onPress={onToggleVoice}
+            style={[styles.voicePlay, { backgroundColor: isMe ? 'rgba(255,255,255,0.22)' : palette.chipSurfaceSoft }]}
+            accessibilityLabel={isPlaying ? 'Pause voice message' : 'Play voice message'}>
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={16} color={isMe ? '#ffffff' : palette.primary} />
+          </Pressable>
+          <View style={styles.waveform}>
+            {VOICE_WAVE.map((height, index) => (
+              <View
+                key={index}
+                style={[styles.waveBar, { height, backgroundColor: isMe ? 'rgba(255,255,255,0.7)' : palette.dot }]}
+              />
+            ))}
+          </View>
+          <Text style={[styles.voiceDuration, { color: isMe ? 'rgba(255,255,255,0.85)' : palette.textSecondary }]}>
+            {formatDuration(message.durationSec ?? 0)}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   if (message.kind === 'compliment') {
     return (
@@ -296,6 +454,11 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontWeight: '500',
     color: palette.textSecondary,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
   },
   headerAction: {
     padding: spacing.xxs,
@@ -411,6 +574,108 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.border,
+  },
+  emojiToggle: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micButton: {
+    backgroundColor: palette.chipSurfaceSoft,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  recordingBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  recordCancel: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingMeta: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: palette.chipSurfaceSoft,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    minHeight: 44,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radius.pill,
+    backgroundColor: palette.danger,
+  },
+  recordingTime: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: palette.textPrimary,
+    minWidth: 38,
+  },
+  recordingHint: {
+    flex: 1,
+    fontSize: typography.caption,
+    fontWeight: '500',
+    color: palette.textSecondary,
+  },
+  emojiPanel: {
+    height: 200,
+    backgroundColor: palette.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.border,
+  },
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  emojiCell: {
+    width: `${100 / 8}%`,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiText: {
+    fontSize: 26,
+  },
+  voiceBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    maxWidth: '78%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+  },
+  voicePlay: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waveform: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 24,
+  },
+  waveBar: {
+    width: 3,
+    borderRadius: radius.pill,
+  },
+  voiceDuration: {
+    fontSize: typography.label,
+    fontWeight: '700',
   },
   inputWrap: {
     flex: 1,

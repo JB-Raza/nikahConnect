@@ -90,3 +90,46 @@ export const historyResults: Record<HistoryFilterId, ExploreProfile[]> = {
   passed: byId(['e4', 'e11']),
   complimented: [],
 };
+
+// Lite sort applied on top of a History category (Favourited, Liked, etc.).
+export type HistorySortId = 'recent' | 'matched' | 'active' | 'name';
+
+export const historySorts: { id: HistorySortId; label: string; icon: string }[] = [
+  { id: 'recent', label: 'Most recent', icon: 'time-outline' },
+  { id: 'matched', label: 'Most matched', icon: 'heart-outline' },
+  { id: 'active', label: 'Recently active', icon: 'radio-outline' },
+  { id: 'name', label: 'Name (A–Z)', icon: 'text-outline' },
+];
+
+export function sortHistory(list: ExploreProfile[], sort: HistorySortId): ExploreProfile[] {
+  const copy = [...list];
+  switch (sort) {
+    case 'recent':
+      return copy.sort((a, b) => recencyRank(a.activeLabel) - recencyRank(b.activeLabel));
+    case 'matched':
+      return copy.sort((a, b) => matchScore(b) - matchScore(a));
+    case 'active':
+      return copy.sort(
+        (a, b) => Number(b.isOnline) - Number(a.isOnline) || recencyRank(a.activeLabel) - recencyRank(b.activeLabel),
+      );
+    case 'name':
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
+    default:
+      return copy;
+  }
+}
+
+// Lower rank = more recent, derived from the human-readable active label.
+function recencyRank(label: string): number {
+  const text = label.toLowerCase();
+  if (text.includes('now')) return 0;
+  if (text.includes('m ago')) return 1;
+  if (text.includes('h ago')) return 2;
+  if (text.includes('yesterday')) return 3;
+  return 4;
+}
+
+// Mock relevance proxy until a real personality match score exists.
+function matchScore(profile: ExploreProfile): number {
+  return (profile.isVerified ? 2 : 0) + (profile.isOnline ? 1 : 0);
+}

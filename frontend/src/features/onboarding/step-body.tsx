@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
-import { type ComponentProps, forwardRef, useRef, useState } from 'react';
+import { type ComponentProps, forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 
 import ProfilePhotoGrid from '@/components/profile-photo-grid';
@@ -28,6 +28,8 @@ type StepBodyProps = {
   onRemovePhoto: (uri: string) => void;
   /** Total horizontal padding wrapping the photo grid, so tiles size correctly. */
   photoContentPadding?: number;
+  /** When true, highlight missing required inputs in red (after a failed submit). */
+  error?: boolean;
 };
 
 export default function StepBody({
@@ -41,6 +43,7 @@ export default function StepBody({
   onAddPhoto,
   onRemovePhoto,
   photoContentPadding,
+  error,
 }: StepBodyProps) {
   const [query, setQuery] = useState('');
 
@@ -53,6 +56,7 @@ export default function StepBody({
           autoCapitalize="words"
           value={form.firstName}
           onChangeText={(value) => patch({ firstName: value })}
+          error={error && form.firstName.trim().length < 2}
         />
         <LabeledInput
           label="Last name"
@@ -60,6 +64,7 @@ export default function StepBody({
           autoCapitalize="words"
           value={form.lastName}
           onChangeText={(value) => patch({ lastName: value })}
+          error={error && form.lastName.trim().length < 1}
         />
       </View>
     );
@@ -68,21 +73,33 @@ export default function StepBody({
   if (step.kind === 'gender') {
     return (
       <View style={styles.genderRow}>
-        <GenderCard label="Male" icon="male" selected={form.gender === 'male'} onPress={() => onSelectSingle('gender', 'male')} />
-        <GenderCard label="Female" icon="female" selected={form.gender === 'female'} onPress={() => onSelectSingle('gender', 'female')} />
+        <GenderCard label="Male" icon="male" selected={form.gender === 'male'} error={error} onPress={() => onSelectSingle('gender', 'male')} />
+        <GenderCard label="Female" icon="female" selected={form.gender === 'female'} error={error} onPress={() => onSelectSingle('gender', 'female')} />
       </View>
     );
   }
 
   if (step.kind === 'dob') {
-    return <DobStep form={form} age={age} patch={patch} />;
+    return <DobStep form={form} age={age} patch={patch} error={error} />;
   }
 
   if (step.kind === 'location') {
     return (
       <View style={styles.gap}>
-        <LabeledInput label="City" placeholder="e.g. Lahore" value={form.city} onChangeText={(value) => patch({ city: value })} />
-        <LabeledInput label="Country" placeholder="e.g. Pakistan" value={form.country} onChangeText={(value) => patch({ country: value })} />
+        <LabeledInput
+          label="City"
+          placeholder="e.g. Lahore"
+          value={form.city}
+          onChangeText={(value) => patch({ city: value })}
+          error={error && form.city.trim().length < 2}
+        />
+        <LabeledInput
+          label="Country"
+          placeholder="e.g. Pakistan"
+          value={form.country}
+          onChangeText={(value) => patch({ country: value })}
+          error={error && form.country.trim().length < 2}
+        />
         <LabeledInput
           label="Address (optional)"
           placeholder="Area or street"
@@ -203,6 +220,33 @@ export default function StepBody({
     );
   }
 
+  if (step.kind === 'chipCategories') {
+    const values = step.field ? (form[step.field] as string[]) : [];
+    return (
+      <View style={styles.groupGap}>
+        {(step.categories ?? []).map((category) => (
+          <View key={category.label} style={styles.group}>
+            <View style={styles.categoryHeader}>
+              {category.icon ? <Ionicons name={category.icon} size={15} color={palette.primary} /> : null}
+              <Text style={styles.categoryLabel}>{category.label}</Text>
+            </View>
+            <View style={styles.chipWrap}>
+              {category.options.map((option) => (
+                <Capsule
+                  key={option.value}
+                  label={option.label}
+                  icon={option.icon}
+                  selected={values.includes(option.value)}
+                  onPress={() => step.field && onToggleMulti(step.field, option.value)}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
   if (step.kind === 'chipGroups') {
     return (
       <View style={styles.groupGap}>
@@ -230,21 +274,7 @@ export default function StepBody({
   }
 
   if (step.kind === 'bio') {
-    return (
-      <View style={styles.gap}>
-        <TextInput
-          style={styles.bioInput}
-          placeholder="I’m someone who values faith, family, and kindness…"
-          placeholderTextColor={palette.textSecondary}
-          multiline
-          maxLength={500}
-          textAlignVertical="top"
-          value={form.bio}
-          onChangeText={(value) => patch({ bio: value })}
-        />
-        <Text style={styles.bioCounter}>{form.bio.length}/500</Text>
-      </View>
-    );
+    return <BioField value={form.bio} onCommit={(value) => patch({ bio: value })} />;
   }
 
   if (step.kind === 'photos') {
@@ -265,10 +295,12 @@ function DobStep({
   form,
   age,
   patch,
+  error,
 }: {
   form: OnboardingForm;
   age: number | null;
   patch: (partial: Partial<OnboardingForm>) => void;
+  error?: boolean;
 }) {
   const dayRef = useRef<TextInput>(null);
   const monthRef = useRef<TextInput>(null);
@@ -308,6 +340,7 @@ function DobStep({
           maxLength={2}
           value={form.dob.day}
           onChangeText={(v) => updateDob('day', v)}
+          error={error && !valid}
         />
         <DobField
           ref={monthRef}
@@ -317,6 +350,7 @@ function DobStep({
           value={form.dob.month}
           onChangeText={(v) => updateDob('month', v)}
           onKeyPress={handleBackspace('month')}
+          error={error && !valid}
         />
         <DobField
           ref={yearRef}
@@ -327,15 +361,16 @@ function DobStep({
           onChangeText={(v) => updateDob('year', v)}
           onKeyPress={handleBackspace('year')}
           flex={1.4}
+          error={error && !valid}
         />
       </View>
       <View style={styles.agePreview}>
         <Ionicons
-          name={valid ? 'checkmark-circle' : 'information-circle-outline'}
+          name={valid ? 'checkmark-circle' : error ? 'alert-circle' : 'information-circle-outline'}
           size={16}
-          color={valid ? palette.success : palette.textSecondary}
+          color={valid ? palette.success : error ? palette.danger : palette.textSecondary}
         />
-        <Text style={styles.agePreviewText}>
+        <Text style={[styles.agePreviewText, error && !valid && styles.agePreviewError]}>
           {age === null
             ? 'Enter a valid date of birth.'
             : age < MIN_AGE
@@ -448,26 +483,123 @@ function Capsule({
   );
 }
 
+const COMMIT_DELAY_MS = 300;
+
+/**
+ * Buffers a text field's value in local state so each keystroke re-renders only
+ * this input — not the whole onboarding form. The value is pushed up to the form
+ * on a short debounce (so progress/validation stay roughly live) and flushed
+ * immediately on blur. It re-syncs if the form changes externally (e.g. the
+ * "Use my current location" button prefilling the field) without clobbering
+ * in-progress typing.
+ */
+function useBufferedText(external: string, onCommit: (value: string) => void) {
+  const [text, setText] = useState(external);
+  const lastExternal = useRef(external);
+  const textRef = useRef(external);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  textRef.current = text;
+
+  useEffect(() => {
+    // Only re-sync on genuine external changes — not the echo of our own commit.
+    if (external !== lastExternal.current) {
+      lastExternal.current = external;
+      setText(external);
+      textRef.current = external;
+    }
+  }, [external]);
+
+  useEffect(
+    () => () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+    },
+    [],
+  );
+
+  const flush = useCallback(() => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    lastExternal.current = textRef.current;
+    onCommit(textRef.current);
+  }, [onCommit]);
+
+  const onChange = useCallback(
+    (next: string) => {
+      setText(next);
+      textRef.current = next;
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        lastExternal.current = textRef.current;
+        onCommit(textRef.current);
+      }, COMMIT_DELAY_MS);
+    },
+    [onCommit],
+  );
+
+  return { text, onChange, flush };
+}
+
 function LabeledInput({
   label,
+  value = '',
+  onChangeText,
+  error,
   ...props
-}: ComponentProps<typeof TextInput> & { label: string }) {
+}: ComponentProps<typeof TextInput> & { label: string; error?: boolean }) {
+  const { text, onChange, flush } = useBufferedText(value as string, (next) => onChangeText?.(next));
   return (
     <View style={styles.labeledField}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldBox}>
-        <TextInput style={styles.fieldInput} placeholderTextColor={palette.textSecondary} {...props} />
+      <View style={[styles.fieldBox, error && styles.fieldBoxError]}>
+        <TextInput
+          style={styles.fieldInput}
+          placeholderTextColor={palette.textSecondary}
+          {...props}
+          value={text}
+          onChangeText={onChange}
+          onBlur={flush}
+          onEndEditing={flush}
+        />
       </View>
     </View>
   );
 }
 
-const DobField = forwardRef<TextInput, ComponentProps<typeof TextInput> & { label: string; flex?: number }>(
-  ({ label, flex = 1, ...props }, ref) => {
+function BioField({ value, onCommit }: { value: string; onCommit: (value: string) => void }) {
+  const { text, onChange, flush } = useBufferedText(value, onCommit);
+  return (
+    <View style={styles.gap}>
+      <TextInput
+        style={styles.bioInput}
+        placeholder="I’m someone who values faith, family, and kindness…"
+        placeholderTextColor={palette.textSecondary}
+        multiline
+        maxLength={500}
+        textAlignVertical="top"
+        value={text}
+        onChangeText={onChange}
+        onBlur={flush}
+        onEndEditing={flush}
+      />
+      <Text style={styles.bioCounter}>{text.length}/500</Text>
+    </View>
+  );
+}
+
+const DobField = forwardRef<TextInput, ComponentProps<typeof TextInput> & { label: string; flex?: number; error?: boolean }>(
+  ({ label, flex = 1, error, ...props }, ref) => {
     return (
       <View style={[styles.labeledField, { flex }]}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        <View style={styles.fieldBox}>
+        <View style={[styles.fieldBox, error && styles.fieldBoxError]}>
           <TextInput
             ref={ref}
             style={[styles.fieldInput, styles.dobInput]}
@@ -486,15 +618,19 @@ function GenderCard({
   label,
   icon,
   selected,
+  error,
   onPress,
 }: {
   label: string;
   icon: IoniconName;
   selected: boolean;
+  error?: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={[styles.genderCard, selected && styles.genderCardActive]} onPress={onPress}>
+    <Pressable
+      style={[styles.genderCard, selected && styles.genderCardActive, error && !selected && styles.genderCardError]}
+      onPress={onPress}>
       <View style={[styles.genderIcon, selected && styles.genderIconActive]}>
         <Ionicons name={icon} size={26} color={selected ? '#ffffff' : palette.primary} />
       </View>
@@ -508,6 +644,14 @@ const styles = StyleSheet.create({
   groupGap: { gap: spacing.xl },
   group: { gap: spacing.sm },
   groupLabel: { fontSize: typography.subtitle, fontWeight: '800', color: palette.textPrimary },
+  categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  categoryLabel: {
+    fontSize: typography.caption,
+    fontWeight: '800',
+    color: palette.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -609,11 +753,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     justifyContent: 'center',
   },
+  fieldBoxError: { borderColor: palette.danger, backgroundColor: 'rgba(187,47,47,0.05)' },
   fieldInput: { fontSize: typography.body, fontWeight: '600', color: palette.textPrimary, paddingVertical: spacing.sm },
   dobRow: { flexDirection: 'row', gap: spacing.sm },
   dobInput: { textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false, fontSize: typography.subtitle },
   agePreview: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   agePreviewText: { fontSize: typography.caption, fontWeight: '600', color: palette.textSecondary },
+  agePreviewError: { color: palette.danger },
   locateButton: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', paddingVertical: spacing.xs },
   locateText: { fontSize: typography.caption, fontWeight: '700', color: palette.primary },
   genderRow: { flexDirection: 'row', gap: spacing.md },
@@ -628,6 +774,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
   },
   genderCardActive: { borderColor: palette.primary, backgroundColor: palette.chipSurfaceSoft },
+  genderCardError: { borderColor: palette.danger, backgroundColor: 'rgba(187,47,47,0.05)' },
   genderIcon: {
     width: 56,
     height: 56,

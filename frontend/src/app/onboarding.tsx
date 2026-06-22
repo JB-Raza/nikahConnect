@@ -8,17 +8,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
+import FaceVerifyModal from '@/features/onboarding/face-verify-modal';
 import {
   INITIAL_FORM,
   MAX_PHOTOS,
   STEPS,
   computeAge,
   isStepValid,
+  stepErrorReason,
   type OnboardingForm,
 } from '@/features/onboarding/config';
 import FieldRow, { formatFieldValue } from '@/features/onboarding/field-row';
 import PickerSheet from '@/features/onboarding/picker-sheet';
-import { ROW_LABEL, SECTIONS, STEP_BY_KEY } from '@/features/onboarding/sections';
+import { ROW_LABEL, SECTION_BY_ROW, SECTIONS, STEP_BY_KEY } from '@/features/onboarding/sections';
 import StepBody from '@/features/onboarding/step-body';
 import { useUserProfile } from '@/features/profile/user-profile-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -34,24 +36,32 @@ export default function OnboardingScreen() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<OnboardingForm>(INITIAL_FORM);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [faceVerified, setFaceVerified] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   const sheetRef = useRef<BottomSheetModal>(null);
+  const completedRef = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionY = useRef<Record<string, number>>({});
 
   const age = computeAge(form.dob);
   const skipChildren = form.maritalStatus === 'Never married';
   const activeStep = activeKey ? STEP_BY_KEY[activeKey] : null;
 
-  const { completedCount, total } = useMemo(() => {
+  const { completedCount, total, invalidSteps } = useMemo(() => {
     const tracked = STEPS.filter((step) => !(step.key === 'children' && skipChildren));
-    const done = tracked.filter((step) => isStepValid(step, form, age)).length;
-    return { completedCount: done, total: tracked.length };
+    const invalid = tracked.filter((step) => !isStepValid(step, form, age));
+    return { completedCount: tracked.length - invalid.length, total: tracked.length, invalidSteps: invalid };
   }, [form, age, skipChildren]);
 
-  const allValid = completedCount === total;
-  const remaining = total - completedCount;
   const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  const invalidKeys = useMemo(() => new Set(invalidSteps.map((step) => step.key)), [invalidSteps]);
 
-  const patch = (partial: Partial<OnboardingForm>) => setForm((previous) => ({ ...previous, ...partial }));
+  const patch = useCallback(
+    (partial: Partial<OnboardingForm>) => setForm((previous) => ({ ...previous, ...partial })),
+    [],
+  );
 
   const openSheet = useCallback((key: string) => {
     setActiveKey(key);
@@ -60,13 +70,57 @@ export default function OnboardingScreen() {
 
   const closeSheet = () => sheetRef.current?.dismiss();
 
-  const finish = () => {
+  const completeOnboarding = () => {
+    if (completedRef.current) {
+      return;
+    }
+    completedRef.current = true;
+    setVerifyOpen(false);
     setLoading(true);
     setProfile(form);
     setTimeout(() => {
       setLoading(false);
       router.replace('/(tabs)/marriage');
     }, 900);
+  };
+
+  const finish = () => {
+    // Require a face check (against the uploaded photos) before completing.
+    if (!faceVerified && form.photos.length >= 1) {
+      setVerifyOpen(true);
+      return;
+    }
+    completeOnboarding();
+  };
+
+  const handleFinishPress = () => {
+    if (loading) return;
+
+    if (invalidSteps.length > 0) {
+      setShowErrors(true);
+      const labels = invalidSteps.map((step) => ROW_LABEL[step.key]);
+      const preview = labels.slice(0, 4).join(', ');
+      const extra = labels.length > 4 ? ` and ${labels.length - 4} more` : '';
+      showAlert({
+        type: 'warning',
+        title: 'A few details are missing',
+        message: `Please complete: ${preview}${extra}.`,
+      });
+
+      const firstSectionId = SECTION_BY_ROW[invalidSteps[0].key];
+      const y = sectionY.current[firstSectionId];
+      if (y != null) {
+        scrollRef.current?.scrollTo({ y: Math.max(y - spacing.md, 0), animated: true });
+      }
+      return;
+    }
+
+    finish();
+  };
+
+  const handleVerified = () => {
+    setFaceVerified(true);
+    completeOnboarding();
   };
 
   const goBack = () => {
@@ -177,18 +231,28 @@ export default function OnboardingScreen() {
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}>
           {SECTIONS.map((section) => {
             // Photos render full-bleed (no surrounding card) to match the original 3-per-row grid.
             const bare = section.id === 'photos';
             const photoPadding = bare ? spacing.xl * 2 : spacing.xl * 2 + spacing.md * 2;
             return (
-              <View key={section.id} style={styles.section}>
+              <View
+                key={section.id}
+                style={styles.section}
+                onLayout={(event) => {
+                  sectionY.current[section.id] = event.nativeEvent.layout.y;
+                }}>
                 <Text style={styles.sectionTitle}>{section.title}</Text>
                 <View style={bare ? undefined : styles.card}>
                   {section.rows.map((row) => {
                     if (row.key === 'children' && skipChildren) return null;
                     const step = STEP_BY_KEY[row.key];
+                    const invalid = showErrors && invalidKeys.has(row.key);
 
                     if (row.mode === 'inline') {
                       return (
@@ -205,7 +269,9 @@ export default function OnboardingScreen() {
                             onAddPhoto={addPhoto}
                             onRemovePhoto={removePhoto}
                             photoContentPadding={photoPadding}
+                            error={invalid}
                           />
+                          {invalid ? <Text style={styles.inlineError}>{stepErrorReason(step, form, age)}</Text> : null}
                         </View>
                       );
                     }
@@ -217,6 +283,8 @@ export default function OnboardingScreen() {
                         label={ROW_LABEL[row.key]}
                         value={formatFieldValue(step, form)}
                         onPress={openSheet}
+                        error={invalid}
+                        errorText={invalid ? stepErrorReason(step, form, age) : null}
                       />
                     );
                   })}
@@ -228,17 +296,13 @@ export default function OnboardingScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
           <Pressable
-            onPress={() => allValid && finish()}
-            disabled={!allValid || loading}
+            onPress={handleFinishPress}
+            disabled={loading}
             style={({ pressed }) => [
               styles.finishButton,
-              { backgroundColor: !allValid || loading ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
+              { backgroundColor: loading ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
             ]}>
-            {loading ? (
-              <ActivityIndicator color={palette.textOnPrimary} />
-            ) : (
-              <Text style={styles.finishText}>{allValid ? 'Finish setup' : `Complete ${remaining} more`}</Text>
-            )}
+            {loading ? <ActivityIndicator color={palette.textOnPrimary} /> : <Text style={styles.finishText}>Finish setup</Text>}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -253,6 +317,14 @@ export default function OnboardingScreen() {
         onSetGroup={setGroup}
         onToggleMulti={toggleMulti}
         onDone={closeSheet}
+      />
+
+      <FaceVerifyModal
+        visible={verifyOpen}
+        photos={form.photos}
+        onRemovePhoto={(uri) => patch({ photos: form.photos.filter((item) => item !== uri) })}
+        onVerified={handleVerified}
+        onClose={() => setVerifyOpen(false)}
       />
     </View>
   );
@@ -292,6 +364,7 @@ const styles = StyleSheet.create({
   },
   inlineBlock: { paddingVertical: spacing.md, gap: spacing.sm },
   inlineLabel: { fontSize: typography.subtitle, fontWeight: '700', color: palette.textPrimary },
+  inlineError: { fontSize: typography.caption, fontWeight: '600', color: palette.danger },
   footer: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,

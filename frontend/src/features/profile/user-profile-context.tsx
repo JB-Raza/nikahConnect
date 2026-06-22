@@ -23,7 +23,7 @@ const DEFAULT_PROFILE: OnboardingForm = {
   profession: 'Software Engineer',
   education: 'Undergraduate degree',
   nationalities: ['Pakistani'],
-  ethnicities: ['Punjabi'],
+  ethnicity: 'Punjabi',
   languages: ['Urdu', 'English'],
   sect: 'Sunni',
   familyBackground: 'Close-knit family',

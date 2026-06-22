@@ -15,7 +15,7 @@ export function computeProfileCompletion(form: OnboardingForm): number {
     { weight: 5, done: form.profession !== null },
     { weight: 5, done: form.education !== null },
     { weight: 4, done: form.nationalities.length > 0 },
-    { weight: 4, done: form.ethnicities.length > 0 },
+    { weight: 4, done: form.ethnicity !== null },
     { weight: 4, done: form.languages.length >= 1 },
     { weight: 4, done: form.sect !== null },
     { weight: 3, done: form.familyBackground !== null },

@@ -34,20 +34,27 @@ type FieldRowProps = {
   label: string;
   value: string | null;
   onPress: (key: string) => void;
+  error?: boolean;
+  errorText?: string | null;
 };
 
 // Memoized so editing one field doesn't re-render every other row on the screen.
-function FieldRow({ itemKey, label, value, onPress }: FieldRowProps) {
+function FieldRow({ itemKey, label, value, onPress, error, errorText }: FieldRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => onPress(itemKey)}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.valueWrap}>
-        <Text style={[styles.value, !value && styles.placeholder]} numberOfLines={1}>
-          {value ?? 'Select'}
-        </Text>
-        <Ionicons name="chevron-forward" size={18} color={palette.textSecondary} />
-      </View>
-    </Pressable>
+    <View>
+      <Pressable
+        style={({ pressed }) => [styles.row, error && styles.rowError, pressed && styles.rowPressed]}
+        onPress={() => onPress(itemKey)}>
+        <Text style={[styles.label, error && styles.labelError]}>{label}</Text>
+        <View style={styles.valueWrap}>
+          <Text style={[styles.value, !value && styles.placeholder, error && styles.valueError]} numberOfLines={1}>
+            {value ?? 'Select'}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={error ? palette.danger : palette.textSecondary} />
+        </View>
+      </Pressable>
+      {error && errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+    </View>
   );
 }
 
@@ -63,8 +70,23 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   rowPressed: { opacity: 0.6 },
+  rowError: {
+    borderWidth: 1,
+    borderColor: palette.danger,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: 'rgba(187,47,47,0.05)',
+  },
   label: { flexShrink: 0, fontSize: typography.subtitle, fontWeight: '700', color: palette.textPrimary },
+  labelError: { color: palette.danger },
   valueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs },
   value: { flexShrink: 1, fontSize: typography.body, fontWeight: '600', color: palette.textPrimary, textAlign: 'right' },
   placeholder: { color: palette.textSecondary, fontWeight: '500' },
+  valueError: { color: palette.danger },
+  errorText: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+    color: palette.danger,
+    marginTop: spacing.xxs,
+    marginLeft: spacing.xs,
+  },
 });

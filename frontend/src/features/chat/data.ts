@@ -125,7 +125,9 @@ export type ChatMessage = {
   text: string;
   sender: 'me' | 'them';
   time: string;
-  kind?: 'text' | 'compliment';
+  kind?: 'text' | 'compliment' | 'voice';
+  /** Length of the voice note in seconds (only for `kind: 'voice'`). */
+  durationSec?: number;
 };
 
 const chatThreads: Record<string, ChatMessage[]> = {
@@ -142,7 +144,8 @@ const chatThreads: Record<string, ChatMessage[]> = {
     { id: 'c2-m1', sender: 'them', text: 'Assalamu alaikum!', time: '10:01' },
     { id: 'c2-m2', sender: 'me', text: 'Walaikum assalam, how are you?', time: '10:03' },
     { id: 'c2-m3', sender: 'them', text: 'Alhamdulillah, doing well.', time: '10:04' },
-    { id: 'c2-m4', sender: 'them', text: 'Looking forward to the family meeting', time: 'now' },
+    { id: 'c2-m4', sender: 'them', text: '', time: '10:05', kind: 'voice', durationSec: 14 },
+    { id: 'c2-m5', sender: 'them', text: 'Looking forward to the family meeting', time: 'now' },
   ],
   c3: [
     { id: 'c3-m1', sender: 'me', text: 'Salam! How are you doing?', time: '1h' },

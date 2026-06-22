@@ -1,5 +1,6 @@
 import * as Device from 'expo-device';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 export type CameraCaptureResult =
   | { status: 'unsupported' }
@@ -8,8 +9,15 @@ export type CameraCaptureResult =
   | { status: 'error' }
   | { status: 'success'; uri: string };
 
-// The iOS Simulator has no camera, so launching it natively crashes the app.
-export const isCameraAvailable = (): boolean => Device.isDevice;
+// The iOS Simulator has no camera and crashes natively when one is launched.
+// Android emulators DO expose working (emulated/virtual-scene) cameras, so we
+// only treat the iOS Simulator as unsupported.
+export const isCameraAvailable = (): boolean => {
+  if (Platform.OS === 'ios') {
+    return Device.isDevice;
+  }
+  return true;
+};
 
 export async function capturePhoto(
   options: ImagePicker.ImagePickerOptions = {},

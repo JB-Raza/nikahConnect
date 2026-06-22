@@ -18,7 +18,7 @@ export type OnboardingForm = {
   profession: string | null;
   education: string | null;
   nationalities: string[];
-  ethnicities: string[];
+  ethnicity: string | null;
   languages: string[];
   sect: string | null;
   familyBackground: string | null;
@@ -38,9 +38,11 @@ export type OnboardingForm = {
   photos: string[];
 };
 
-export type Option = { value: string; label: string; description?: string; flag?: string };
+export type Option = { value: string; label: string; description?: string; flag?: string; icon?: IoniconName };
 
 export type ChipGroup = { field: keyof OnboardingForm; label: string; icon: IoniconName; options: Option[] };
+
+export type ChipCategory = { label: string; icon?: IoniconName; options: Option[] };
 
 export type StepKind =
   | 'name'
@@ -51,6 +53,7 @@ export type StepKind =
   | 'cards'
   | 'checkbox'
   | 'chipGroups'
+  | 'chipCategories'
   | 'chips'
   | 'bio'
   | 'photos';
@@ -68,6 +71,7 @@ export type Step = {
   max?: number;
   min?: number;
   groups?: ChipGroup[];
+  categories?: ChipCategory[];
 };
 
 export const MAX_PHOTOS = 6;
@@ -175,18 +179,108 @@ const BORN_MUSLIM: Option[] = [
   { value: 'Convert', label: 'No, I’m a convert' },
 ];
 
-const INTERESTS = toOptions([
-  'Travel', 'Reading', 'Cooking', 'Fitness', 'Sports', 'Hiking', 'Photography', 'Art', 'Music', 'Movies', 'Gaming',
-  'Volunteering', 'Quran study', 'Islamic lectures', 'Calligraphy', 'Fashion', 'Foodie', 'Coffee', 'Nature', 'Animals',
-  'Technology', 'Science', 'History', 'Languages', 'Writing', 'Poetry', 'Gardening', 'Cycling', 'Swimming', 'Football',
-  'Cricket', 'Yoga', 'Charity',
-]);
+const withIcons = (entries: [label: string, icon: IoniconName][]): Option[] =>
+  entries.map(([label, icon]) => ({ value: label, label, icon }));
 
-const PERSONALITY = toOptions([
-  'Empathetic', 'Honest', 'Patient', 'Ambitious', 'Funny', 'Calm', 'Adventurous', 'Loyal', 'Optimistic', 'Practical',
-  'Thoughtful', 'Disciplined', 'Warm', 'Generous', 'Confident', 'Humble', 'Creative', 'Organised', 'Easy-going',
-  'Reliable', 'Caring', 'Independent', 'Outgoing', 'Family-oriented',
-]);
+const flattenCategories = (categories: ChipCategory[]): Option[] => categories.flatMap((category) => category.options);
+
+const INTEREST_CATEGORIES: ChipCategory[] = [
+  {
+    label: 'Sports & Fitness',
+    icon: 'barbell-outline',
+    options: withIcons([
+      ['Fitness', 'barbell-outline'], ['Sports', 'basketball-outline'], ['Football', 'football-outline'],
+      ['Cricket', 'baseball-outline'], ['Cycling', 'bicycle-outline'], ['Swimming', 'water-outline'],
+      ['Yoga', 'body-outline'], ['Hiking', 'walk-outline'],
+    ]),
+  },
+  {
+    label: 'Arts & Creativity',
+    icon: 'color-palette-outline',
+    options: withIcons([
+      ['Art', 'color-palette-outline'], ['Music', 'musical-notes-outline'], ['Photography', 'camera-outline'],
+      ['Calligraphy', 'brush-outline'], ['Writing', 'create-outline'], ['Poetry', 'sparkles-outline'],
+      ['Fashion', 'shirt-outline'],
+    ]),
+  },
+  {
+    label: 'Knowledge & Faith',
+    icon: 'book-outline',
+    options: withIcons([
+      ['Reading', 'book-outline'], ['Quran study', 'moon-outline'], ['Islamic lectures', 'mic-outline'],
+      ['History', 'time-outline'], ['Science', 'flask-outline'], ['Languages', 'language-outline'],
+    ]),
+  },
+  {
+    label: 'Food & Leisure',
+    icon: 'fast-food-outline',
+    options: withIcons([
+      ['Cooking', 'restaurant-outline'], ['Foodie', 'fast-food-outline'], ['Coffee', 'cafe-outline'],
+      ['Movies', 'film-outline'], ['Gaming', 'game-controller-outline'],
+    ]),
+  },
+  {
+    label: 'Outdoors & Nature',
+    icon: 'leaf-outline',
+    options: withIcons([
+      ['Travel', 'airplane-outline'], ['Nature', 'leaf-outline'], ['Animals', 'paw-outline'],
+      ['Gardening', 'flower-outline'],
+    ]),
+  },
+  {
+    label: 'Tech & Giving',
+    icon: 'hardware-chip-outline',
+    options: withIcons([
+      ['Technology', 'hardware-chip-outline'], ['Volunteering', 'hand-left-outline'], ['Charity', 'heart-outline'],
+    ]),
+  },
+];
+
+const PERSONALITY_CATEGORIES: ChipCategory[] = [
+  {
+    label: 'Warmth & heart',
+    icon: 'heart-outline',
+    options: withIcons([
+      ['Empathetic', 'heart-outline'], ['Caring', 'hand-left-outline'], ['Warm', 'flame-outline'],
+      ['Generous', 'gift-outline'], ['Loyal', 'ribbon-outline'], ['Family-oriented', 'home-outline'],
+    ]),
+  },
+  {
+    label: 'Character & values',
+    icon: 'shield-checkmark-outline',
+    options: withIcons([
+      ['Honest', 'shield-checkmark-outline'], ['Humble', 'flower-outline'], ['Reliable', 'checkmark-circle-outline'],
+      ['Disciplined', 'barbell-outline'], ['Thoughtful', 'bulb-outline'],
+    ]),
+  },
+  {
+    label: 'Drive & ambition',
+    icon: 'trophy-outline',
+    options: withIcons([
+      ['Ambitious', 'trophy-outline'], ['Confident', 'flash-outline'], ['Independent', 'person-outline'],
+      ['Organised', 'list-outline'], ['Practical', 'construct-outline'],
+    ]),
+  },
+  {
+    label: 'Temperament',
+    icon: 'leaf-outline',
+    options: withIcons([
+      ['Patient', 'hourglass-outline'], ['Calm', 'leaf-outline'], ['Optimistic', 'sunny-outline'],
+      ['Easy-going', 'cafe-outline'],
+    ]),
+  },
+  {
+    label: 'Social & spark',
+    icon: 'sparkles-outline',
+    options: withIcons([
+      ['Funny', 'happy-outline'], ['Outgoing', 'people-outline'], ['Adventurous', 'compass-outline'],
+      ['Creative', 'color-palette-outline'],
+    ]),
+  },
+];
+
+const INTERESTS = flattenCategories(INTEREST_CATEGORIES);
+const PERSONALITY = flattenCategories(PERSONALITY_CATEGORIES);
 
 export const STEPS: Step[] = [
   { key: 'name', kind: 'name', title: "What's your name?", subtitle: 'This is how you’ll appear on NikahConnect.' },
@@ -208,10 +302,9 @@ export const STEPS: Step[] = [
     searchPlaceholder: 'Search for nationalities', options: NATIONALITIES, suggested: ['Pakistani'], max: MAX_NATIONALITIES,
   },
   {
-    key: 'ethnicity', kind: 'checkbox', field: 'ethnicities', title: "What's your ethnicity?",
-    subtitle: 'Please tell us your ethnic and cultural background.', searchable: true,
-    searchPlaceholder: 'Search for ethnicities',
-    options: ETHNICITIES, suggested: ['Baloch', 'Bangladeshi', 'Gujarati', 'Hazara', 'Kashmiri', 'Muhajir'],
+    key: 'ethnicity', kind: 'select', field: 'ethnicity', title: "What's your ethnicity?",
+    subtitle: 'Please tell us your ethnic and cultural background. Pick the one that fits you best.',
+    searchable: true, searchPlaceholder: 'Search for ethnicities', options: ETHNICITIES,
   },
   {
     key: 'languages', kind: 'chips', field: 'languages', title: 'Which languages do you speak?',
@@ -235,12 +328,14 @@ export const STEPS: Step[] = [
   { key: 'abroad', kind: 'select', field: 'moveAbroad', title: 'Would you move abroad?', options: MOVE_ABROAD },
   { key: 'family', kind: 'select', field: 'familyBackground', title: "What's your family background?", subtitle: 'Tell matches a little about your home life.', options: FAMILY_BACKGROUND },
   {
-    key: 'interests', kind: 'chips', field: 'interests', title: 'What are your interests?',
-    subtitle: `Choose at least ${MIN_INTERESTS} so we can find you better matches.`, options: INTERESTS, min: MIN_INTERESTS,
+    key: 'interests', kind: 'chipCategories', field: 'interests', title: 'What are your interests?',
+    subtitle: `Choose at least ${MIN_INTERESTS} so we can find you better matches.`,
+    categories: INTEREST_CATEGORIES, options: INTERESTS, min: MIN_INTERESTS,
   },
   {
-    key: 'personality', kind: 'chips', field: 'personality', title: 'How would you describe your personality?',
-    subtitle: `Pick up to ${MAX_PERSONALITY} traits that fit you best.`, options: PERSONALITY, max: MAX_PERSONALITY, min: 1,
+    key: 'personality', kind: 'chipCategories', field: 'personality', title: 'How would you describe your personality?',
+    subtitle: `Pick up to ${MAX_PERSONALITY} traits that fit you best.`,
+    categories: PERSONALITY_CATEGORIES, options: PERSONALITY, max: MAX_PERSONALITY, min: 1,
   },
   {
     key: 'bio', kind: 'bio', field: 'bio', title: 'About you',
@@ -261,7 +356,7 @@ export const INITIAL_FORM: OnboardingForm = {
   profession: null,
   education: null,
   nationalities: [],
-  ethnicities: [],
+  ethnicity: null,
   languages: [],
   sect: null,
   familyBackground: null,
@@ -298,6 +393,36 @@ export function computeAge({ day, month, year }: Dob): number | null {
   return age;
 }
 
+/** Short reason a step is incomplete, or null when the step is valid. */
+export function stepErrorReason(step: Step, form: OnboardingForm, age: number | null): string | null {
+  if (isStepValid(step, form, age)) return null;
+
+  switch (step.kind) {
+    case 'name':
+      return 'Enter your first and last name';
+    case 'gender':
+      return 'Select your gender';
+    case 'dob':
+      if (age !== null && age < MIN_AGE) return `You must be at least ${MIN_AGE}`;
+      return 'Enter a valid date of birth';
+    case 'location':
+      return 'Enter your city and country';
+    case 'select':
+    case 'cards':
+      return 'Make a selection';
+    case 'chipGroups':
+      return 'Answer both questions';
+    case 'checkbox':
+    case 'chips':
+    case 'chipCategories':
+      return `Select at least ${step.min ?? 1}`;
+    case 'photos':
+      return 'Add at least one photo';
+    default:
+      return 'This field is required';
+  }
+}
+
 export function isStepValid(step: Step, form: OnboardingForm, age: number | null): boolean {
   switch (step.kind) {
     case 'name':
@@ -312,7 +437,8 @@ export function isStepValid(step: Step, form: OnboardingForm, age: number | null
     case 'cards':
       return step.field ? form[step.field] !== null : true;
     case 'checkbox':
-    case 'chips': {
+    case 'chips':
+    case 'chipCategories': {
       const value = (step.field ? form[step.field] : []) as string[];
       return value.length >= (step.min ?? 1);
     }
