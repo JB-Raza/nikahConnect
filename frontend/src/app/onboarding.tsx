@@ -46,14 +46,12 @@ export default function OnboardingScreen() {
   const sectionY = useRef<Record<string, number>>({});
 
   const age = computeAge(form.dob);
-  const skipChildren = form.maritalStatus === 'Never married';
   const activeStep = activeKey ? STEP_BY_KEY[activeKey] : null;
 
   const { completedCount, total, invalidSteps } = useMemo(() => {
-    const tracked = STEPS.filter((step) => !(step.key === 'children' && skipChildren));
-    const invalid = tracked.filter((step) => !isStepValid(step, form, age));
-    return { completedCount: tracked.length - invalid.length, total: tracked.length, invalidSteps: invalid };
-  }, [form, age, skipChildren]);
+    const invalid = STEPS.filter((step) => !isStepValid(step, form, age));
+    return { completedCount: STEPS.length - invalid.length, total: STEPS.length, invalidSteps: invalid };
+  }, [form, age]);
 
   const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const invalidKeys = useMemo(() => new Set(invalidSteps.map((step) => step.key)), [invalidSteps]);
@@ -132,11 +130,7 @@ export default function OnboardingScreen() {
   };
 
   const applySingleValue = (field: keyof OnboardingForm, value: string) => {
-    if (field === 'maritalStatus' && value === 'Never married') {
-      patch({ maritalStatus: value, wantsChildren: 'No' });
-    } else {
-      patch({ [field]: value } as Partial<OnboardingForm>);
-    }
+    patch({ [field]: value } as Partial<OnboardingForm>);
   };
 
   // Inline single-selects (gender) just set the value.
@@ -249,7 +243,6 @@ export default function OnboardingScreen() {
                 <Text style={styles.sectionTitle}>{section.title}</Text>
                 <View style={bare ? undefined : styles.card}>
                   {section.rows.map((row) => {
-                    if (row.key === 'children' && skipChildren) return null;
                     const step = STEP_BY_KEY[row.key];
                     const invalid = showErrors && invalidKeys.has(row.key);
 

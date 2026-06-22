@@ -1,10 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +21,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import IconCircleButton from '@/components/icon-circle-button';
@@ -48,9 +57,13 @@ export default function ChatThreadScreen() {
   const [draft, setDraft] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [recordSeconds, setRecordSeconds] = useState(0);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  const recordTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder);
+  const player = useAudioPlayer(null);
+  const playerStatus = useAudioPlayerStatus(player);
+  const recordSeconds = Math.floor((recorderState.durationMillis ?? 0) / 1000);
 
   useEffect(() => {
     if (id) {
@@ -58,14 +71,9 @@ export default function ChatThreadScreen() {
     }
   }, [id, markChatRead]);
 
-  useEffect(
-    () => () => {
-      if (recordTimer.current) {
-        clearInterval(recordTimer.current);
-      }
-    },
-    [],
-  );
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
+  }, []);
 
   if (!chat) {
     return (
@@ -99,40 +107,73 @@ export default function ChatThreadScreen() {
 
   const insertEmoji = (emoji: string) => setDraft((previous) => previous + emoji);
 
-  const stopRecordTimer = () => {
-    if (recordTimer.current) {
-      clearInterval(recordTimer.current);
-      recordTimer.current = null;
+  const startRecording = async () => {
+    setShowEmojis(false);
+    try {
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) {
+        showAlert({
+          type: 'warning',
+          title: 'Microphone access needed',
+          message: 'Enable microphone access for NikahConnect in Settings to record voice messages.',
+        });
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setRecording(true);
+    } catch {
+      showToast({ type: 'error', message: 'Could not start recording.' });
     }
   };
 
-  const startRecording = () => {
-    setShowEmojis(false);
-    setRecordSeconds(0);
-    setRecording(true);
-    recordTimer.current = setInterval(() => setRecordSeconds((value) => value + 1), 1000);
-  };
-
-  const cancelRecording = () => {
-    stopRecordTimer();
+  const cancelRecording = async () => {
+    try {
+      await recorder.stop();
+    } catch {}
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => undefined);
     setRecording(false);
-    setRecordSeconds(0);
   };
 
-  const sendVoice = () => {
-    stopRecordTimer();
-    const durationSec = Math.max(1, recordSeconds);
+  const sendVoice = async () => {
+    const durationSec = Math.max(1, Math.round((recorderState.durationMillis ?? 0) / 1000));
+    try {
+      await recorder.stop();
+    } catch {}
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => undefined);
+    const uri = recorder.uri;
+    setRecording(false);
+    if (!uri) {
+      showToast({ type: 'error', message: 'Recording failed. Please try again.' });
+      return;
+    }
     setMessages((previous) => [
       ...previous,
-      { id: `local-${Date.now()}`, sender: 'me', text: '', time: 'now', kind: 'voice', durationSec },
+      { id: `local-${Date.now()}`, sender: 'me', text: '', time: 'now', kind: 'voice', durationSec, audioUri: uri },
     ]);
-    setRecording(false);
-    setRecordSeconds(0);
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   };
 
-  const toggleVoicePlayback = (messageId: string) =>
-    setPlayingVoiceId((current) => (current === messageId ? null : messageId));
+  const toggleVoicePlayback = (target: ChatMessage) => {
+    if (!target.audioUri) {
+      return;
+    }
+    if (playingVoiceId === target.id) {
+      if (playerStatus.playing) {
+        player.pause();
+      } else {
+        if (playerStatus.duration > 0 && playerStatus.currentTime >= playerStatus.duration - 0.1) {
+          player.seekTo(0);
+        }
+        player.play();
+      }
+      return;
+    }
+    player.replace({ uri: target.audioUri });
+    player.play();
+    setPlayingVoiceId(target.id);
+  };
 
   const confirmBlock = () =>
     showAlert({
@@ -165,7 +206,7 @@ export default function ChatThreadScreen() {
     });
 
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+    <KeyboardAvoidingView style={[styles.screen, { backgroundColor: palette.background }]} behavior="padding">
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
         <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
 
@@ -192,11 +233,8 @@ export default function ChatThreadScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={insets.top + 8}>
-        <FlatList
+      <FlatList
+          style={styles.flex}
           ref={listRef}
           data={messages}
           keyExtractor={(item) => item.id}
@@ -204,14 +242,23 @@ export default function ChatThreadScreen() {
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={<MatchBanner name={chat.name} />}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              name={chat.name}
-              isPlaying={playingVoiceId === item.id}
-              onToggleVoice={() => toggleVoicePlayback(item.id)}
-            />
-          )}
+          renderItem={({ item }) => {
+            const isActive = playingVoiceId === item.id;
+            const progress =
+              isActive && playerStatus.duration > 0
+                ? Math.min(1, playerStatus.currentTime / playerStatus.duration)
+                : 0;
+            return (
+              <MessageBubble
+                message={item}
+                name={chat.name}
+                isPlaying={isActive && playerStatus.playing}
+                progress={progress}
+                elapsedSec={isActive && playerStatus.playing ? Math.floor(playerStatus.currentTime) : null}
+                onToggleVoice={() => toggleVoicePlayback(item)}
+              />
+            );
+          }}
         />
 
         {showEmojis && !recording ? <EmojiPanel onSelect={insertEmoji} /> : null}
@@ -259,8 +306,7 @@ export default function ChatThreadScreen() {
             </>
           )}
         </View>
-      </KeyboardAvoidingView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -308,16 +354,23 @@ function MessageBubble({
   message,
   name,
   isPlaying,
+  progress,
+  elapsedSec,
   onToggleVoice,
 }: {
   message: ChatMessage;
   name: string;
   isPlaying: boolean;
+  progress: number;
+  elapsedSec: number | null;
   onToggleVoice: () => void;
 }) {
   const isMe = message.sender === 'me';
 
   if (message.kind === 'voice') {
+    const filledBars = Math.round(progress * VOICE_WAVE.length);
+    const playedColor = isMe ? '#ffffff' : palette.primary;
+    const idleColor = isMe ? 'rgba(255,255,255,0.4)' : palette.dot;
     return (
       <View style={[styles.bubbleRow, isMe ? styles.rowEnd : styles.rowStart]}>
         <View style={[styles.voiceBubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
@@ -331,12 +384,12 @@ function MessageBubble({
             {VOICE_WAVE.map((height, index) => (
               <View
                 key={index}
-                style={[styles.waveBar, { height, backgroundColor: isMe ? 'rgba(255,255,255,0.7)' : palette.dot }]}
+                style={[styles.waveBar, { height, backgroundColor: index < filledBars ? playedColor : idleColor }]}
               />
             ))}
           </View>
           <Text style={[styles.voiceDuration, { color: isMe ? 'rgba(255,255,255,0.85)' : palette.textSecondary }]}>
-            {formatDuration(message.durationSec ?? 0)}
+            {formatDuration(elapsedSec ?? message.durationSec ?? 0)}
           </Text>
         </View>
       </View>

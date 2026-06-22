@@ -1,10 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut, FadeOutUp, SlideInDown, SlideOutDown, withSpring, withTiming } from 'react-native-reanimated';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+  BottomSheetView,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown, FadeOut, FadeOutUp, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
+
+const SHEET_MAX_HEIGHT = Dimensions.get('window').height * 0.82;
 
 const palette = colors.light;
 
@@ -133,10 +143,13 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
   const insets = useContext(SafeAreaInsetsContext);
   const bottomInset = insets?.bottom ?? 0;
 
+  const actionSheetRef = useRef<BottomSheetModal>(null);
+  const pickerRef = useRef<BottomSheetModal>(null);
+
   const closeDialog = useCallback(() => setDialog(null), []);
   const closeMatchDialog = useCallback(() => setMatchDialog(null), []);
-  const closeActionSheet = useCallback(() => setActionSheet(null), []);
-  const closePicker = useCallback(() => setPicker(null), []);
+  const closeActionSheet = useCallback(() => actionSheetRef.current?.dismiss(), []);
+  const closePicker = useCallback(() => pickerRef.current?.dismiss(), []);
 
   const showActionSheet = useCallback((options: ActionSheetOptions) => {
     counter.current += 1;
@@ -147,6 +160,26 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
     counter.current += 1;
     setPicker({ ...options, id: counter.current });
   }, []);
+
+  // Present the sheets imperatively once their content state is set.
+  useEffect(() => {
+    if (actionSheet) {
+      actionSheetRef.current?.present();
+    }
+  }, [actionSheet]);
+
+  useEffect(() => {
+    if (picker) {
+      pickerRef.current?.present();
+    }
+  }, [picker]);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.45} pressBehavior="close" />
+    ),
+    [],
+  );
 
   const showAlert = useCallback((options: AlertOptions) => {
     counter.current += 1;
@@ -299,35 +332,66 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
         ) : null}
       </Modal>
 
-      <Modal
-        transparent
-        visible={actionSheet !== null}
-        animationType="fade"
-        statusBarTranslucent
-        navigationBarTranslucent
-        onRequestClose={closeActionSheet}>
-        {actionSheet ? (
-          <ActionSheetView
-            data={actionSheet}
-            bottomInset={bottomInset}
-            onClose={closeActionSheet}
-            onRun={(action) => {
-              closeActionSheet();
-              action.onPress?.();
-            }}
-          />
-        ) : null}
-      </Modal>
+      <BottomSheetModal
+        ref={actionSheetRef}
+        enableDynamicSizing
+        maxDynamicContentSize={SHEET_MAX_HEIGHT}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        handleIndicatorStyle={styles.sheetHandleIndicator}
+        backgroundStyle={styles.sheetBackground}
+        onDismiss={() => setActionSheet(null)}>
+        <BottomSheetView style={[styles.sheetContent, { paddingBottom: bottomInset + spacing.md }]}>
+          {actionSheet ? (
+            <>
+              {actionSheet.title ? <Text style={styles.sheetTitle}>{actionSheet.title}</Text> : null}
+              {actionSheet.message ? <Text style={styles.sheetMessage}>{actionSheet.message}</Text> : null}
 
-      <Modal
-        transparent
-        visible={picker !== null}
-        animationType="fade"
-        statusBarTranslucent
-        navigationBarTranslucent
-        onRequestClose={closePicker}>
+              <View style={styles.sheetList}>
+                {actionSheet.actions.map((action, index) => {
+                  const destructive = action.style === 'destructive';
+                  return (
+                    <Pressable
+                      key={`${action.label}-${index}`}
+                      onPress={() => {
+                        closeActionSheet();
+                        action.onPress?.();
+                      }}
+                      style={({ pressed }) => [styles.sheetRow, pressed && styles.sheetRowPressed]}>
+                      {action.icon ? (
+                        <Ionicons
+                          name={action.icon}
+                          size={20}
+                          color={destructive ? palette.danger : palette.primary}
+                          style={styles.sheetRowIcon}
+                        />
+                      ) : null}
+                      <Text style={[styles.sheetRowLabel, destructive && styles.sheetRowDanger]}>{action.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Pressable onPress={closeActionSheet} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
+                <Text style={styles.sheetCancelText}>{actionSheet.cancelText ?? 'Cancel'}</Text>
+              </Pressable>
+            </>
+          ) : null}
+        </BottomSheetView>
+      </BottomSheetModal>
+
+      <BottomSheetModal
+        ref={pickerRef}
+        enableDynamicSizing
+        maxDynamicContentSize={SHEET_MAX_HEIGHT}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        handleIndicatorStyle={styles.sheetHandleIndicator}
+        backgroundStyle={styles.sheetBackground}
+        onDismiss={() => setPicker(null)}>
         {picker ? (
-          <PickerSheetView
+          <PickerSheetContent
+            key={picker.id}
             data={picker}
             bottomInset={bottomInset}
             onClose={closePicker}
@@ -336,8 +400,12 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
               picker.onSelect(value);
             }}
           />
-        ) : null}
-      </Modal>
+        ) : (
+          <BottomSheetView style={styles.sheetContent}>
+            <View />
+          </BottomSheetView>
+        )}
+      </BottomSheetModal>
 
       <SafeAreaInsetsContext.Consumer>
         {(insets) => (
@@ -397,57 +465,7 @@ function ToastCard({ toast, onPress }: { toast: ToastState; onPress: () => void 
   );
 }
 
-function ActionSheetView({
-  data,
-  bottomInset,
-  onClose,
-  onRun,
-}: {
-  data: ActionSheetOptions;
-  bottomInset: number;
-  onClose: () => void;
-  onRun: (action: ActionSheetAction) => void;
-}) {
-  return (
-    <View style={styles.sheetRoot}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-        <View style={styles.sheetBackdrop} />
-      </Pressable>
-
-      <Animated.View
-        entering={SlideInDown.duration(240)}
-        exiting={SlideOutDown.duration(160)}
-        style={[styles.sheetCard, { paddingBottom: bottomInset + spacing.sm }]}>
-        <View style={styles.sheetHandle} />
-        {data.title ? <Text style={styles.sheetTitle}>{data.title}</Text> : null}
-        {data.message ? <Text style={styles.sheetMessage}>{data.message}</Text> : null}
-
-        <View style={styles.sheetList}>
-          {data.actions.map((action, index) => {
-            const destructive = action.style === 'destructive';
-            return (
-              <Pressable
-                key={`${action.label}-${index}`}
-                onPress={() => onRun(action)}
-                style={({ pressed }) => [styles.sheetRow, pressed && styles.sheetRowPressed]}>
-                {action.icon ? (
-                  <Ionicons name={action.icon} size={20} color={destructive ? palette.danger : palette.primary} style={styles.sheetRowIcon} />
-                ) : null}
-                <Text style={[styles.sheetRowLabel, destructive && styles.sheetRowDanger]}>{action.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable onPress={onClose} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
-          <Text style={styles.sheetCancelText}>{data.cancelText ?? 'Cancel'}</Text>
-        </Pressable>
-      </Animated.View>
-    </View>
-  );
-}
-
-function PickerSheetView({
+function PickerSheetContent({
   data,
   bottomInset,
   onClose,
@@ -466,58 +484,47 @@ function PickerSheetView({
   const filtered = q ? choices.filter((choice) => choice.label.toLowerCase().includes(q)) : choices;
 
   return (
-    <View style={styles.sheetRoot}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-        <View style={styles.sheetBackdrop} />
+    <BottomSheetScrollView
+      style={styles.pickerScroll}
+      contentContainerStyle={[styles.sheetContent, { paddingBottom: bottomInset + spacing.md }]}
+      keyboardShouldPersistTaps="handled">
+      <Text style={styles.sheetTitle}>{data.title}</Text>
+      {data.subtitle ? <Text style={styles.sheetMessage}>{data.subtitle}</Text> : null}
+
+      {data.searchable ? (
+        <View style={styles.searchRow}>
+          <Ionicons name="search" size={18} color={palette.textSecondary} />
+          <BottomSheetTextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder={data.searchPlaceholder ?? 'Search'}
+            placeholderTextColor={palette.textSecondary}
+            autoCorrect={false}
+          />
+        </View>
+      ) : null}
+
+      <View style={styles.pickerList}>
+        {filtered.map((choice) => {
+          const active = data.selected === choice.value;
+          return (
+            <Pressable
+              key={choice.value}
+              onPress={() => onPick(choice.value)}
+              style={({ pressed }) => [styles.pickerRow, pressed && styles.sheetRowPressed]}>
+              <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>{choice.label}</Text>
+              {active ? <Ionicons name="checkmark" size={20} color={palette.primary} /> : null}
+            </Pressable>
+          );
+        })}
+        {filtered.length === 0 ? <Text style={styles.pickerEmpty}>No matches</Text> : null}
+      </View>
+
+      <Pressable onPress={onClose} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
+        <Text style={styles.sheetCancelText}>{data.cancelText ?? 'Cancel'}</Text>
       </Pressable>
-
-      <Animated.View
-        entering={SlideInDown.duration(240)}
-        exiting={SlideOutDown.duration(160)}
-        style={[styles.sheetCard, styles.pickerCard, { paddingBottom: bottomInset + spacing.sm }]}>
-        <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>{data.title}</Text>
-        {data.subtitle ? <Text style={styles.sheetMessage}>{data.subtitle}</Text> : null}
-
-        {data.searchable ? (
-          <View style={styles.searchRow}>
-            <Ionicons name="search" size={18} color={palette.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              value={query}
-              onChangeText={setQuery}
-              placeholder={data.searchPlaceholder ?? 'Search'}
-              placeholderTextColor={palette.textSecondary}
-              autoCorrect={false}
-            />
-          </View>
-        ) : null}
-
-        <ScrollView
-          style={styles.pickerScroll}
-          contentContainerStyle={styles.pickerScrollContent}
-          keyboardShouldPersistTaps="handled"
-          bounces={false}>
-          {filtered.map((choice) => {
-            const active = data.selected === choice.value;
-            return (
-              <Pressable
-                key={choice.value}
-                onPress={() => onPick(choice.value)}
-                style={({ pressed }) => [styles.pickerRow, pressed && styles.sheetRowPressed]}>
-                <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>{choice.label}</Text>
-                {active ? <Ionicons name="checkmark" size={20} color={palette.primary} /> : null}
-              </Pressable>
-            );
-          })}
-          {filtered.length === 0 ? <Text style={styles.pickerEmpty}>No matches</Text> : null}
-        </ScrollView>
-
-        <Pressable onPress={onClose} style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}>
-          <Text style={styles.sheetCancelText}>{data.cancelText ?? 'Cancel'}</Text>
-        </Pressable>
-      </Animated.View>
-    </View>
+    </BottomSheetScrollView>
   );
 }
 
@@ -678,35 +685,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: palette.textPrimary,
   },
-  sheetRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheetBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(11, 26, 48, 0.40)',
-  },
-  sheetCard: {
+  sheetBackground: {
     backgroundColor: palette.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
   },
-  pickerCard: {
-    maxHeight: '78%',
-  },
-  sheetHandle: {
-    alignSelf: 'center',
+  sheetHandleIndicator: {
+    backgroundColor: palette.border,
     width: 40,
     height: 5,
-    borderRadius: radius.pill,
-    backgroundColor: palette.border,
-    marginBottom: spacing.sm,
+  },
+  sheetContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
   sheetTitle: {
     fontSize: typography.subtitle,
@@ -783,10 +774,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   pickerScroll: {
-    marginTop: spacing.sm,
+    flexGrow: 0,
   },
-  pickerScrollContent: {
-    paddingBottom: spacing.xs,
+  pickerList: {
+    marginTop: spacing.sm,
   },
   pickerRow: {
     flexDirection: 'row',

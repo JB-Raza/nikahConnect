@@ -1,6 +1,7 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import AlertProvider from '@/features/alerts/alert-provider';
@@ -14,7 +15,9 @@ import PremiumProvider from '@/features/premium/premium-context';
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardProvider>
       <SafeAreaProvider>
+      <BottomSheetModalProvider>
       <AlertProvider>
         <FiltersProvider>
           <UserProfileProvider>
@@ -22,7 +25,6 @@ export default function RootLayout() {
             <ProfileActionsProvider>
               <PremiumProvider>
                 <ChatProvider>
-              <BottomSheetModalProvider>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen
                   name="filters"
@@ -47,7 +49,6 @@ export default function RootLayout() {
                 <Stack.Screen name="call" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="match/[id]" options={{ presentation: 'transparentModal', animation: 'fade' }} />
               </Stack>
-              </BottomSheetModalProvider>
                 </ChatProvider>
               </PremiumProvider>
             </ProfileActionsProvider>
@@ -55,7 +56,9 @@ export default function RootLayout() {
           </UserProfileProvider>
         </FiltersProvider>
       </AlertProvider>
+      </BottomSheetModalProvider>
       </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
