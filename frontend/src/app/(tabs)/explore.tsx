@@ -19,6 +19,7 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientHeader from '@/components/gradient-header';
 import ProfileCard from '@/components/profile-card';
 import {
   forYouSections,
@@ -30,6 +31,7 @@ import {
   type HistoryFilterId,
   type HistorySortId,
 } from '@/features/explore/data';
+import { hapticSelection } from '@/features/haptics';
 import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
@@ -60,7 +62,7 @@ export default function ExploreTabScreen() {
   const tabWidth = tabBarWidth / TABS.length;
   const indicatorWidth = tabWidth * 0.52;
   const indicatorInset = (tabWidth - indicatorWidth) / 2;
-  const indicatorX = useSharedValue(spacing.lg + indicatorInset);
+  const indicatorX = useSharedValue(indicatorInset);
 
   const carouselCardWidth = Math.round(width * 0.4);
   const gridCardWidth = Math.round((width - spacing.lg * 2 - spacing.sm) / 2);
@@ -69,16 +71,17 @@ export default function ExploreTabScreen() {
 
   const goToTab = useCallback(
     (tab: ExploreTab) => {
+      hapticSelection();
       setActiveTab(tab);
       const index = TABS.indexOf(tab);
-      indicatorX.value = withTiming(spacing.lg + index * tabWidth + indicatorInset, { duration: 280 });
+      indicatorX.value = withTiming(index * tabWidth + indicatorInset, { duration: 280 });
     },
     [indicatorInset, indicatorX, tabWidth],
   );
 
   useEffect(() => {
     const index = TABS.indexOf(activeTab);
-    indicatorX.value = withTiming(spacing.lg + index * tabWidth + indicatorInset, { duration: 280 });
+    indicatorX.value = withTiming(index * tabWidth + indicatorInset, { duration: 280 });
   }, [activeTab, indicatorInset, indicatorX, tabWidth]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
@@ -86,26 +89,27 @@ export default function ExploreTabScreen() {
   }));
 
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Text style={styles.screenTitle}>Explore</Text>
-        {activeTab === 'history' ? (
-          <Pressable style={styles.sortButton} onPress={openSortSheet} accessibilityLabel="Sort history">
-            <Ionicons name="filter" size={16} color={palette.primary} />
-            <Text style={styles.sortButtonText}>
-              {historySorts.find((option) => option.id === historySort)?.label ?? 'Sort'}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={styles.tabBar}>
-        <View style={styles.tabButtonsRow}>
-          <TabButton label="For You" active={activeTab === 'forYou'} onPress={() => goToTab('forYou')} />
-          <TabButton label="My History" active={activeTab === 'history'} onPress={() => goToTab('history')} />
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <GradientHeader
+        title="Explore"
+        right={
+          activeTab === 'history' ? (
+            <Pressable style={styles.sortButton} onPress={openSortSheet} accessibilityLabel="Sort history">
+              <Ionicons name="filter" size={16} color="#ffffff" />
+              <Text style={styles.sortButtonText}>
+                {historySorts.find((option) => option.id === historySort)?.label ?? 'Sort'}
+              </Text>
+            </Pressable>
+          ) : undefined
+        }>
+        <View style={styles.tabBar}>
+          <View style={styles.tabButtonsRow}>
+            <TabButton label="For You" active={activeTab === 'forYou'} onPress={() => goToTab('forYou')} />
+            <TabButton label="My History" active={activeTab === 'history'} onPress={() => goToTab('history')} />
+          </View>
+          <Animated.View style={[styles.tabIndicator, { width: indicatorWidth }, indicatorStyle]} />
         </View>
-        <Animated.View style={[styles.tabIndicator, { width: indicatorWidth }, indicatorStyle]} />
-      </View>
+      </GradientHeader>
 
       {activeTab === 'history' ? (
         <HistoryFilterStrip activeFilter={historyFilter} onSelectFilter={setHistoryFilter} getHistory={getHistory} />
@@ -359,7 +363,7 @@ function HistoryEmptyState({ label }: { label: string }) {
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <Pressable style={styles.tabButton} onPress={onPress}>
-      <Text style={[styles.tabLabel, { color: active ? palette.textPrimary : palette.textSecondary }]}>{label}</Text>
+      <Text style={[styles.tabLabel, { color: active ? '#ffffff' : 'rgba(255,255,255,0.7)' }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -371,18 +375,6 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  screenTitle: {
-    fontSize: typography.title,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   sortButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,13 +383,13 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
+    borderColor: 'rgba(255,255,255,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
   sortButtonText: {
     fontSize: typography.caption,
     fontWeight: '700',
-    color: palette.primary,
+    color: '#ffffff',
   },
   sheetContent: {
     paddingHorizontal: spacing.xl,
@@ -431,9 +423,7 @@ const styles = StyleSheet.create({
     color: palette.primary,
   },
   tabBar: {
-    paddingHorizontal: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.border,
+    marginTop: spacing.xs,
   },
   tabButtonsRow: {
     flexDirection: 'row',
@@ -455,7 +445,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderTopLeftRadius: radius.pill,
     borderTopRightRadius: radius.pill,
-    backgroundColor: palette.primary,
+    backgroundColor: '#ffffff',
   },
   section: {
     marginBottom: spacing.xl,

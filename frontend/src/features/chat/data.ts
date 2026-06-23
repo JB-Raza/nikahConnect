@@ -98,6 +98,22 @@ export const chats: ChatItem[] = [
   },
 ];
 
+export type NewMatch = {
+  id: string;
+  name: string;
+  photo: ImageSourcePropType;
+  isOnline: boolean;
+};
+
+/** Recent matches the user hasn't messaged yet — shown as a carousel atop the chat list. */
+export const newMatches: NewMatch[] = [
+  { id: 'm1', name: 'Mariam', photo: photoB, isOnline: true },
+  { id: 'm2', name: 'Ayesha', photo: photoC, isOnline: true },
+  { id: 'm3', name: 'Fatima', photo: photoA, isOnline: false },
+  { id: 'm4', name: 'Rabia', photo: photoB, isOnline: false },
+  { id: 'm5', name: 'Sadia', photo: photoC, isOnline: true },
+];
+
 export type ChatFilterId = 'all' | 'unread' | 'compliments' | 'online';
 
 export const chatFilters: { id: ChatFilterId; label: string }[] = [

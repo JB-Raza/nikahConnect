@@ -1,19 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
   Pressable,
-  ScrollView,
   Share,
+  StatusBar,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
@@ -21,9 +29,10 @@ import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { resolveMatchChatId } from '@/features/alerts/match-alert';
+import { hapticImpact } from '@/features/haptics';
 import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { getProfileById } from '@/features/profiles/data';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, gradients, radius, shadow, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 const MIN_COMPLIMENT_LENGTH = 10;
@@ -31,6 +40,7 @@ const MIN_COMPLIMENT_LENGTH = 10;
 export default function ProfileDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const { showAlert, showToast, showMatch } = useAlert();
   const { isFavorited, toggleFavorite, recordLike, recordCompliment, blockUser } = useProfileActions();
   const { width, height } = useWindowDimensions();
@@ -48,7 +58,19 @@ export default function ProfileDetailScreen() {
 
   const heroHeight = Math.round(height * 0.62);
   const stickyBottomOffset = insets.bottom + spacing.md;
+  const headerHeight = insets.top + spacing.sm + sizing.iconButtonSize + spacing.xs;
   const complimentIsValid = composerText.trim().length >= MIN_COMPLIMENT_LENGTH;
+
+  const firstName = profile.name.split(' ')[0];
+  const headerName = firstName.length > 8 ? `${firstName.slice(0, 8)}...` : firstName;
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const headerBackgroundStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, heroHeight * 0.32, heroHeight * 0.55], [0, 0.65, 1], Extrapolation.CLAMP),
+  }));
 
   const dismiss = () => {
     if (router.canGoBack()) {
@@ -69,6 +91,7 @@ export default function ProfileDetailScreen() {
     if (!complimentIsValid) {
       return;
     }
+    hapticImpact();
     recordCompliment(profile);
     complimentSheetRef.current?.dismiss();
     setComposerText('');
@@ -84,6 +107,7 @@ export default function ProfileDetailScreen() {
   };
 
   const handleLike = () => {
+    hapticImpact();
     const isMatch = recordLike(profile);
     if (isMatch) {
       showMatch({
@@ -122,13 +146,26 @@ export default function ProfileDetailScreen() {
 
   return (
     <View style={styles.screen}>
+      {isFocused ? <StatusBar translucent backgroundColor="transparent" barStyle="light-content" /> : null}
+
+      <Animated.View
+        style={[styles.headerBackground, { height: headerHeight }, headerBackgroundStyle]}
+        pointerEvents="none">
+        <LinearGradient colors={gradients.header} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]} pointerEvents="box-none">
-        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="surface" size={40} iconSize={24} />
-        <IconCircleButton icon="share-social-outline" onPress={handleShare} accessibilityLabel="Share profile" variant="surface" size={40} iconSize={20} />
+        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="onDark" size={40} iconSize={24} color="#ffffff" style={styles.glassButton} />
+        <Animated.Text style={[styles.headerTitle, headerBackgroundStyle]} numberOfLines={1}>
+          {headerName}
+        </Animated.Text>
+        <IconCircleButton icon="share-social-outline" onPress={handleShare} accessibilityLabel="Share profile" variant="onDark" size={40} iconSize={20} color="#ffffff" style={styles.glassButton} />
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: stickyBottomOffset + sizing.stickyActionHeight + spacing.xl }}>
         <View style={{ height: heroHeight, width }}>
           <FlatList
@@ -180,6 +217,7 @@ export default function ProfileDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.sheet}>
         <Section title="Your Similarities">
           <CompatibilityBar score={profile.compatibility} />
           {profile.similarities.map((item) => (
@@ -255,7 +293,8 @@ export default function ProfileDetailScreen() {
             <FooterAction label="Report user" icon="flag-outline" onPress={openReport} />
           </View>
         </Section>
-      </ScrollView>
+        </View>
+      </Animated.ScrollView>
 
       <View style={[styles.stickyActions, { bottom: stickyBottomOffset }]} pointerEvents="box-none">
         <CircleAction
@@ -311,8 +350,11 @@ export default function ProfileDetailScreen() {
 
 function Section({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
   return (
-    <View style={[styles.section, !last && styles.sectionDivider]}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={[styles.section, last && styles.sectionLast]}>
+      <View style={styles.sectionTitleRow}>
+        <View style={styles.sectionAccent} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       {children}
     </View>
   );
@@ -320,9 +362,9 @@ function Section({ title, children, last }: { title: string; children: React.Rea
 
 function HeroChip({ text }: { text: string }) {
   return (
-    <View style={styles.heroChip}>
+    <BlurView intensity={18} tint="dark" style={styles.heroChip}>
       <Text style={styles.heroChipText}>{text}</Text>
-    </View>
+    </BlurView>
   );
 }
 
@@ -399,6 +441,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+    zIndex: 20,
+    shadowColor: '#0c3d6b',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
   header: {
     position: 'absolute',
     top: 0,
@@ -410,6 +465,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 30,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: spacing.sm,
+    fontSize: typography.titleMd,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  glassButton: {
+    backgroundColor: 'rgba(0,0,0,0.32)',
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   circleButton: {
     width: sizing.iconButtonSize,
@@ -449,7 +516,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xxl + spacing.md,
     gap: spacing.sm,
   },
   identityRow: {
@@ -460,12 +527,19 @@ const styles = StyleSheet.create({
   identityName: {
     fontSize: typography.title,
     fontWeight: '800',
+    letterSpacing: -0.5,
     color: '#ffffff',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   identityAge: {
     fontSize: typography.titleMd,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.92)',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   verifiedBadge: {
     flexDirection: 'row',
@@ -487,8 +561,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   heroChip: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden',
+    borderColor: 'rgba(255,255,255,0.28)',
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
@@ -501,18 +575,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
   },
-  section: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
+  sheet: {
+    marginTop: -spacing.xl,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    backgroundColor: palette.background,
+    borderTopLeftRadius: radius.xl + spacing.xxs,
+    borderTopRightRadius: radius.xl + spacing.xxs,
+    gap: spacing.md,
   },
-  sectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+  section: {
+    backgroundColor: palette.cardSurface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.cardBorder,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    ...shadow.sm,
+  },
+  sectionLast: {
+    marginBottom: spacing.xs,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xxs,
+  },
+  sectionAccent: {
+    width: 3,
+    height: typography.subtitle,
+    borderRadius: radius.pill,
+    backgroundColor: palette.primary,
   },
   sectionTitle: {
     fontSize: typography.subtitle,
     fontWeight: '800',
+    letterSpacing: -0.2,
     color: palette.textPrimary,
   },
   bodyText: {
@@ -527,18 +627,18 @@ const styles = StyleSheet.create({
   },
   softChip: {
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: 'rgba(36,134,224,0.18)',
     backgroundColor: palette.chipSurfaceSoft,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: spacing.xxl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   softChipText: {
     fontSize: typography.caption,
-    fontWeight: '600',
-    color: palette.textPrimary,
+    fontWeight: '700',
+    color: palette.primaryPressed,
   },
   factRow: {
     flexDirection: 'row',
@@ -547,15 +647,17 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   factLabel: {
-    fontSize: typography.body,
-    fontWeight: '500',
+    fontSize: typography.caption,
+    fontWeight: '600',
     color: palette.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
     flexShrink: 0,
   },
   factValue: {
     flex: 1,
     fontSize: typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
     color: palette.textPrimary,
     textAlign: 'right',
   },
@@ -582,6 +684,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     borderWidth: 1,
     borderColor: palette.border,
+    backgroundColor: palette.chipSurfaceSoft,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

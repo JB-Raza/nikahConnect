@@ -6,6 +6,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import GradientHeader from '@/components/gradient-header';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -60,14 +61,8 @@ export default function VerificationScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Verification</Text>
-        <View style={styles.backButton} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader title="Verification" onBack={dismiss} align="center" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {selfieUri ? (
@@ -130,15 +125,6 @@ export default function VerificationScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backButton: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: typography.titleMd, fontWeight: '800', color: palette.textPrimary },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   hero: { alignItems: 'center', paddingTop: spacing.lg, paddingHorizontal: spacing.md },
   heroIcon: {

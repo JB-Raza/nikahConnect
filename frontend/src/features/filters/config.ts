@@ -42,6 +42,12 @@ export const FILTER_SECTIONS: FilterSection[] = [
         kind: 'single',
         options: [NONE, 'Pakistan', 'United Arab Emirates', 'Saudi Arabia', 'United Kingdom', 'United States', 'Canada', 'Other'],
       },
+      {
+        id: 'radius',
+        label: 'Search radius',
+        kind: 'single',
+        options: [NONE, 'Within 10 km', 'Within 25 km', 'Within 50 km', 'Within 100 km'],
+      },
       { id: 'sect', label: 'Sect', kind: 'single', options: [NONE, 'Sunni', 'Shia', 'Other'] },
       {
         id: 'ethnicity',

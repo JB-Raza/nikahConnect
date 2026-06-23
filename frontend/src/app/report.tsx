@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import GradientHeader from '@/components/gradient-header';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -58,14 +59,8 @@ export default function ReportScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Report</Text>
-        <View style={styles.backButton} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader title="Report" onBack={dismiss} align="center" />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -119,15 +114,6 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.background },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backButton: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: typography.titleMd, fontWeight: '800', color: palette.textPrimary },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   title: { fontSize: typography.title, lineHeight: 36, fontWeight: '800', color: palette.textPrimary },
   subtitle: { fontSize: typography.body, fontWeight: '500', color: palette.textSecondary, lineHeight: 21, marginTop: spacing.xs },

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import IconCircleButton from '@/components/icon-circle-button';
+import GradientHeader from '@/components/gradient-header';
 import { notifications as seedNotifications, type AppNotification, type NotificationType } from '@/features/notifications/data';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
@@ -55,16 +55,16 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.header}>
-        <IconCircleButton icon="chevron-back" onPress={dismiss} accessibilityLabel="Go back" variant="onLight" size={40} iconSize={24} />
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <Pressable onPress={markAllRead} hitSlop={8} disabled={unreadCount === 0} style={styles.markAll}>
-          <Text style={[styles.markAllText, unreadCount === 0 && { color: palette.textSecondary, opacity: 0.5 }]}>
-            Mark all read
-          </Text>
-        </Pressable>
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader
+        title="Notifications"
+        onBack={dismiss}
+        right={
+          <Pressable onPress={markAllRead} hitSlop={8} disabled={unreadCount === 0} style={styles.markAll}>
+            <Text style={[styles.markAllText, unreadCount === 0 && { opacity: 0.45 }]}>Mark all read</Text>
+          </Pressable>
+        }
+      />
 
       <SectionList
         sections={sections}
@@ -131,33 +131,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   markAll: {
     paddingVertical: spacing.xxs,
   },
   markAllText: {
     fontSize: typography.caption,
     fontWeight: '700',
-    color: palette.primary,
+    color: '#ffffff',
   },
   sectionHeader: {
     fontSize: typography.caption,

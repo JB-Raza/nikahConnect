@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
@@ -15,12 +16,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import GradientHeader from '@/components/gradient-header';
 import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
 import { useUserProfile } from '@/features/profile/user-profile-context';
-import { colors, radius, spacing, typography } from '@/theme/theme';
+import { colors, gradients, radius, shadow, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 const TAB_BAR_HEIGHT = 78;
@@ -143,11 +145,20 @@ export default function MenuTabScreen() {
   const completionLabel = completionPercent;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Menu</Text>
-        <IconCircleButton icon="settings-outline" onPress={() => router.push('/settings')} accessibilityLabel="Settings" variant="onLight" size={40} iconSize={22} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader
+        title="Menu"
+        right={
+          <IconCircleButton
+            icon="settings-outline"
+            onPress={() => router.push('/settings')}
+            accessibilityLabel="Settings"
+            variant="onDark"
+            size={38}
+            iconSize={22}
+          />
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -198,15 +209,21 @@ export default function MenuTabScreen() {
 
         <Pressable
           onPress={() => router.push('/premium')}
-          style={({ pressed }) => [styles.premiumCard, pressed && { opacity: 0.92 }]}>
-          <View style={styles.premiumIcon}>
-            <Ionicons name="diamond" size={20} color={palette.textOnPrimary} />
-          </View>
-          <View style={styles.premiumTextWrap}>
-            <Text style={styles.premiumTitle}>NikahConnect Premium</Text>
-            <Text style={styles.premiumSubtitle}>See who liked you, unlimited likes & more</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={palette.textSecondary} />
+          style={({ pressed }) => [styles.premiumCardWrap, pressed && { transform: [{ scale: 0.99 }], opacity: 0.96 }]}>
+          <LinearGradient
+            colors={gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.premiumCard}>
+            <View style={styles.premiumIcon}>
+              <Ionicons name="diamond" size={20} color={palette.textOnPrimary} />
+            </View>
+            <View style={styles.premiumTextWrap}>
+              <Text style={styles.premiumTitle}>NikahConnect Premium</Text>
+              <Text style={styles.premiumSubtitle}>See who liked you, unlimited likes & more</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.9)" />
+          </LinearGradient>
         </Pressable>
 
         <MenuSection title="Discover">
@@ -363,32 +380,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: typography.title,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
-  },
   profileBlock: {
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
   },
   avatarWrap: {
     width: AVATAR_SIZE,
@@ -482,23 +477,25 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginTop: spacing.md,
   },
+  premiumCardWrap: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    borderRadius: radius.lg,
+    ...shadow.md,
+  },
   premiumCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.xl,
     padding: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.premiumSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.premiumBorder,
+    overflow: 'hidden',
   },
   premiumIcon: {
     width: 40,
     height: 40,
     borderRadius: radius.pill,
-    backgroundColor: palette.premiumAccent,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -508,12 +505,12 @@ const styles = StyleSheet.create({
   premiumTitle: {
     fontSize: typography.subtitle,
     fontWeight: '800',
-    color: palette.textPrimary,
+    color: palette.textOnPrimary,
   },
   premiumSubtitle: {
     fontSize: typography.caption,
     fontWeight: '500',
-    color: palette.textSecondary,
+    color: 'rgba(255,255,255,0.88)',
     marginTop: 2,
   },
   section: {

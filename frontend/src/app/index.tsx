@@ -8,6 +8,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
+  StatusBar,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -46,6 +47,7 @@ export default function IntroScreen() {
 
   return (
     <View style={styles.screen}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <FlatList
         ref={listRef}
         data={introSlides}

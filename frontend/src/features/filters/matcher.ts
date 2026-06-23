@@ -12,6 +12,8 @@ export type FilterableProfile = {
   maritalStatus: string;
   childrenCount: number;
   religiousPractice: string;
+  /** Distance from the current user in km. When absent, radius filtering is skipped. */
+  distanceKm?: number;
 };
 
 export function profileMatchesFilters(profile: FilterableProfile, filters: FilterValues): boolean {
@@ -25,6 +27,13 @@ export function profileMatchesFilters(profile: FilterableProfile, filters: Filte
   const location = single('location');
   if (location && location !== NONE && profile.country !== location) {
     return false;
+  }
+  const radius = single('radius');
+  if (radius && radius !== NONE && profile.distanceKm != null) {
+    const km = parseInt(radius.replace(/[^\d]/g, ''), 10);
+    if (Number.isFinite(km) && profile.distanceKm > km) {
+      return false;
+    }
   }
   const nationality = single('nationality');
   if (nationality && nationality !== NONE && profile.country !== nationality) {

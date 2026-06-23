@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import GradientHeader from '@/components/gradient-header';
+import { hapticSuccess } from '@/features/haptics';
 import { usePremium } from '@/features/premium/premium-context';
 import { getPlan } from '@/features/premium/plans';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -51,6 +53,7 @@ export default function CheckoutScreen() {
     setTimeout(() => {
       setLoading(false);
       activate(plan.id);
+      hapticSuccess();
       setDone(true);
     }, 1100);
   };
@@ -74,14 +77,8 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <View style={styles.backButton} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader title="Checkout" onBack={dismiss} align="center" />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
@@ -185,24 +182,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: palette.textPrimary,
   },
   content: {
     paddingHorizontal: spacing.xl,

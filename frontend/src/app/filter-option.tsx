@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientHeader from '@/components/gradient-header';
 import { getField } from '@/features/filters/config';
 import { useFilters } from '@/features/filters/filters-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -27,8 +28,8 @@ export default function FilterOptionScreen() {
 
   if (!field || !field.options) {
     return (
-      <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top + spacing.lg }]}>
-        <Header title="Filter" onBack={dismiss} insetTop={insets.top} />
+      <View style={[styles.screen, { backgroundColor: palette.background }]}>
+        <GradientHeader title="Filter" onBack={dismiss} align="center" />
         <Text style={styles.emptyText}>This filter is unavailable.</Text>
       </View>
     );
@@ -50,12 +51,17 @@ export default function FilterOptionScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
-      <Header
+      <GradientHeader
         title={field.label}
         onBack={dismiss}
-        insetTop={insets.top}
-        rightLabel={isMulti ? 'Done' : undefined}
-        onRight={isMulti ? dismiss : undefined}
+        align="center"
+        right={
+          isMulti ? (
+            <Pressable onPress={dismiss} hitSlop={10}>
+              <Text style={styles.headerRightText}>Done</Text>
+            </Pressable>
+          ) : undefined
+        }
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
@@ -83,65 +89,14 @@ export default function FilterOptionScreen() {
   );
 }
 
-function Header({
-  title,
-  onBack,
-  insetTop,
-  rightLabel,
-  onRight,
-}: {
-  title: string;
-  onBack: () => void;
-  insetTop: number;
-  rightLabel?: string;
-  onRight?: () => void;
-}) {
-  return (
-    <View style={[styles.header, { paddingTop: insetTop + spacing.sm }]}>
-      <Pressable onPress={onBack} hitSlop={10} style={styles.headerSide}>
-        <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-      </Pressable>
-      <Text style={styles.headerTitle} numberOfLines={1}>
-        {title}
-      </Text>
-      <Pressable onPress={onRight} hitSlop={10} style={[styles.headerSide, styles.headerSideRight]} disabled={!onRight}>
-        {rightLabel ? <Text style={styles.headerRightText}>{rightLabel}</Text> : null}
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: palette.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.border,
-  },
-  headerSide: {
-    minWidth: 64,
-  },
-  headerSideRight: {
-    alignItems: 'flex-end',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: typography.subtitle,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   headerRightText: {
     fontSize: typography.body,
     fontWeight: '700',
-    color: palette.primary,
+    color: '#ffffff',
   },
   card: {
     backgroundColor: palette.surface,

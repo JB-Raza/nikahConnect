@@ -5,7 +5,8 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing, typography } from '@/theme/theme';
+import GradientHeader from '@/components/gradient-header';
+import { colors, radius, shadow, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -29,16 +30,8 @@ export function SettingsScaffold({ title, children, footer, fallback = '/(tabs)/
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xs }]}>
-      <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <View style={styles.backButton} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader title={title} onBack={dismiss} align="center" />
 
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
@@ -174,26 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   footer: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
@@ -218,8 +191,9 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
+    borderColor: palette.cardBorder,
     overflow: 'hidden',
+    ...shadow.sm,
   },
   row: {
     flexDirection: 'row',

@@ -45,8 +45,15 @@ export default function AuthWelcomeScreen() {
           </Pressable>
 
           <Text style={styles.terms}>
-            By continuing you agree to our <Text style={styles.termsLink}>Terms</Text> and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>.
+            By continuing you agree to our{' '}
+            <Text style={styles.termsLink} onPress={() => router.push('/legal')}>
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.termsLink} onPress={() => router.push('/legal')}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       </View>

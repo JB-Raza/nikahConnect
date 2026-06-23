@@ -15,6 +15,7 @@ export type Profile = {
   photos: ImageSourcePropType[];
   country: string;
   city: string;
+  distanceKm: number;
   occupation: string;
   religiousPractice: ReligiousPractice;
   similarities: string[];
@@ -55,6 +56,7 @@ export const profiles: Profile[] = [
     photos: [photo1, photo2, photo3],
     country: 'Pakistan',
     city: 'Lahore',
+    distanceKm: 8,
     occupation: 'Product Designer',
     religiousPractice: 'Actively practicing',
     similarities: [
@@ -93,6 +95,7 @@ export const profiles: Profile[] = [
     photos: [photo2, photo3, photo1],
     country: 'United Arab Emirates',
     city: 'Dubai',
+    distanceKm: 42,
     occupation: 'Teacher',
     religiousPractice: 'Strictly practicing',
     similarities: ['Both prioritize deen', 'Both want children', 'Both value education'],
@@ -127,6 +130,7 @@ export const profiles: Profile[] = [
     photos: [photo3, photo1, photo2],
     country: 'Saudi Arabia',
     city: 'Riyadh',
+    distanceKm: 85,
     occupation: 'Software Engineer',
     religiousPractice: 'Occasionally practicing',
     similarities: ['Both prefer honest communication', 'Both are career-oriented', 'Both open to relocation'],

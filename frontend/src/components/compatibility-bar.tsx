@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme/theme';
+import { colors, gradients, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -17,17 +18,22 @@ export default function CompatibilityBar({ score }: { score: number }) {
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <View style={styles.badge}>
+        <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
           <Ionicons name="sparkles" size={14} color={palette.textOnPrimary} />
           <Text style={styles.badgeText}>{clamped}%</Text>
-        </View>
+        </LinearGradient>
         <View style={styles.textWrap}>
           <Text style={styles.title}>{tier(clamped)}</Text>
           <Text style={styles.subtitle}>Based on shared values, goals & interests</Text>
         </View>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${clamped}%` }]} />
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.fill, { width: `${clamped}%` }]}
+        />
       </View>
     </View>
   );

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -111,24 +111,15 @@ type PrimaryButtonProps = {
 };
 
 export function PrimaryButton({ label, onPress, loading, disabled, icon }: PrimaryButtonProps) {
-  const inactive = disabled || loading;
   return (
-    <Pressable
+    <GradientButton
+      label={label}
       onPress={onPress}
-      disabled={inactive}
-      style={({ pressed }) => [
-        authStyles.primaryButton,
-        { backgroundColor: inactive ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
-      ]}>
-      {loading ? (
-        <ActivityIndicator color={palette.textOnPrimary} />
-      ) : (
-        <>
-          {icon ? <Ionicons name={icon} size={18} color={palette.textOnPrimary} /> : null}
-          <Text style={authStyles.primaryLabel}>{label}</Text>
-        </>
-      )}
-    </Pressable>
+      loading={loading}
+      disabled={disabled}
+      icon={icon}
+      style={authStyles.primaryButton}
+    />
   );
 }
 
@@ -260,18 +251,7 @@ const authStyles = StyleSheet.create({
     color: palette.danger,
   },
   primaryButton: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  primaryLabel: {
-    fontSize: typography.button,
-    fontWeight: '800',
-    color: palette.textOnPrimary,
+    alignSelf: 'stretch',
   },
   socialButton: {
     flexDirection: 'row',

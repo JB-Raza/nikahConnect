@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientHeader from '@/components/gradient-header';
 import { getEditProfileField } from '@/features/profile/edit-profile-fields';
 import { useEditProfileDraft } from '@/features/profile/edit-profile-draft-context';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -40,8 +41,8 @@ export default function EditProfileFieldScreen() {
 
   if (!field || !draft) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
-        <Header title="Edit profile" onBack={dismiss} insetTop={insets.top} />
+      <View style={styles.screen}>
+        <GradientHeader title="Edit profile" onBack={dismiss} align="center" />
         <Text style={styles.emptyText}>This field is unavailable.</Text>
       </View>
     );
@@ -56,7 +57,7 @@ export default function EditProfileFieldScreen() {
 
   return (
     <View style={styles.screen}>
-      <Header title={field.label} onBack={dismiss} insetTop={insets.top} />
+      <GradientHeader title={field.label} onBack={dismiss} align="center" />
 
       {field.searchable ? (
         <View style={styles.searchWrap}>
@@ -103,44 +104,10 @@ export default function EditProfileFieldScreen() {
   );
 }
 
-function Header({ title, onBack, insetTop }: { title: string; onBack: () => void; insetTop: number }) {
-  return (
-    <View style={[styles.header, { paddingTop: insetTop + spacing.sm }]}>
-      <Pressable onPress={onBack} hitSlop={10} style={styles.headerSide}>
-        <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-      </Pressable>
-      <Text style={styles.headerTitle} numberOfLines={1}>
-        {title}
-      </Text>
-      <View style={styles.headerSide} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: palette.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: palette.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.border,
-  },
-  headerSide: {
-    minWidth: 64,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: typography.subtitle,
-    fontWeight: '800',
-    color: palette.textPrimary,
   },
   searchWrap: {
     flexDirection: 'row',

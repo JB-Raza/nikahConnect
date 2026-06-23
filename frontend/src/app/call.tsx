@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getChatById } from '@/features/chat/data';
@@ -63,6 +63,7 @@ export default function CallScreen() {
 
   return (
     <View style={styles.screen}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       {isVideo && cameraOn && chat ? (
         <Image source={chat.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
       ) : null}

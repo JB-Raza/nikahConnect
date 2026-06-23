@@ -41,8 +41,8 @@ export default function ProfileCard({
       <Image source={photo} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
       <LinearGradient
-        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.78)']}
-        locations={[0, 0.45, 1]}
+        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.82)']}
+        locations={[0, 0.42, 1]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -81,9 +81,11 @@ export default function ProfileCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     overflow: 'hidden',
     backgroundColor: palette.chipSurfaceSoft,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.cardBorder,
   },
   onlinePill: {
     position: 'absolute',

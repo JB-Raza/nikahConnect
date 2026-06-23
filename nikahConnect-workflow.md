@@ -1,4 +1,23 @@
+# new changes:
+
+1. in chatScreen, when i click the message inputbox, the keyboard becomes active, but it doesn't translateup to keyboard height as it becomes active and stays hidden behind keyboard. add a keyboard avoiding view for it. make sure it has enough spacing from bottom so that it doesn't hide or partially hide behind keyboard.
+
+2. [DONE] i click the sound button to send a voice message, i don't hear the sound, is it not implemented and isn't it frontend task to capture voice and then send to backend. It doesn't even have a timeline like on which second the voice message is present currently. (real recording + playback via expo-audio, live timeline + waveform fill)
+
+3. the statusbar is completely light colored which makes the statusbar invisible to look, can we add a dark transparent color like a partially visible blue color that is not active if we have something to see through like in @nikahConnect/frontend/src/app/(tabs)/marriage.tsx file, the hero image slider is covering behind the statusbar, in that case the status bar stays fully transparent, but as we start scrolling, it should get a partially transparent blue theme color.
+
+4. [DONE] the buttons, tabs inside screen are solid colored, should we add a gradient bg behind them so they give slightly 3d look? (added gradient tokens + reusable GradientButton, soft brand gradient on bottom-tab active pill, migrated all primary CTAs across the app)
+
+5. in the settings screen inside user profile, when user clicks on the app language, a language picker appears from bottom which has some margin from bottom, keep it connected to the bottom of the screen (there should be no margin between the bottom of mobile screen and the picker). i have previously asked you to fix it but you ignored. same case with all the pickers (maybe you are using a single component)
+
+6. selecting never married should not set wants children to no automatically. that was a mistake from my side, fix that too.
+
+7. we need to update the font family too. the current font family looks so generic.
+
 # changes needed to do:
+
+
+
 
 the first change is the change in theme, we are using green color as theme color but i required using the blue that is being used in the logo.png and white. first updating theme and then we will do other changes required.
 

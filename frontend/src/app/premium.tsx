@@ -9,7 +9,7 @@ import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { usePremium, type PlanId } from '@/features/premium/premium-context';
 import { PLANS, PREMIUM_BENEFITS, getPlan, type PremiumBenefit } from '@/features/premium/plans';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, radius, shadow, sizing, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: palette.chipSurfaceSoft,
+    backgroundColor: palette.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     backgroundColor: palette.surface,
     padding: spacing.md,
+    ...shadow.sm,
   },
   planCardActive: {
     borderColor: palette.primary,

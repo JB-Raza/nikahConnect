@@ -6,6 +6,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import { hapticImpact } from '@/features/haptics';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
@@ -39,6 +40,7 @@ export default function BoostScreen() {
   };
 
   const boostNow = () => {
+    hapticImpact();
     setBoosting(true);
     setTimeout(() => {
       setBoosting(false);

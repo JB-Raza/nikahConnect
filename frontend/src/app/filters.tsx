@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GradientButton from '@/components/gradient-button';
+import GradientHeader from '@/components/gradient-header';
 import RangeSlider from '@/components/range-slider';
 import {
   AGE_MAX,
@@ -54,15 +55,17 @@ export default function FiltersScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={dismiss} hitSlop={10} style={styles.headerSide}>
-          <Ionicons name="close" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Filters</Text>
-        <Pressable onPress={clearDraft} hitSlop={10} style={[styles.headerSide, styles.headerSideRight]}>
-          <Text style={styles.clearAllText}>Clear all</Text>
-        </Pressable>
-      </View>
+      <GradientHeader
+        title="Filters"
+        onBack={dismiss}
+        backIcon="close"
+        align="center"
+        right={
+          <Pressable onPress={clearDraft} hitSlop={10}>
+            <Text style={styles.clearAllText}>Clear all</Text>
+          </Pressable>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -235,31 +238,10 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: palette.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.border,
-  },
-  headerSide: {
-    minWidth: 80,
-  },
-  headerSideRight: {
-    alignItems: 'flex-end',
-  },
-  headerTitle: {
-    fontSize: typography.subtitle,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   clearAllText: {
     fontSize: typography.body,
     fontWeight: '700',
-    color: palette.textPrimary,
+    color: '#ffffff',
   },
   basicsBlock: {
     backgroundColor: palette.surface,

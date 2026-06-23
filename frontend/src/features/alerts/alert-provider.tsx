@@ -12,6 +12,7 @@ import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from
 import Animated, { FadeInDown, FadeOut, FadeOutUp, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
+import { hapticSuccess } from '@/features/haptics';
 import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const SHEET_MAX_HEIGHT = Dimensions.get('window').height * 0.82;
@@ -187,6 +188,7 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const showMatch = useCallback((options: MatchAlertOptions) => {
+    hapticSuccess();
     counter.current += 1;
     setMatchDialog({ ...options, id: counter.current });
   }, []);
@@ -589,6 +591,7 @@ const styles = StyleSheet.create({
     fontSize: 19,
     lineHeight: 25,
     fontWeight: '800',
+    letterSpacing: -0.2,
     color: palette.textPrimary,
     textAlign: 'center',
   },

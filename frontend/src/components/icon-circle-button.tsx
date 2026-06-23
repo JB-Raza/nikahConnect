@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors } from '@/theme/theme';
+import { colors, shadow } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -59,13 +59,15 @@ export default function IconCircleButton({
       hitSlop={6}
       style={({ pressed }) => [
         styles.button,
+        variant === 'surface' && styles.surfaceShadow,
         {
           width: size,
           height: size,
           borderRadius: size / 2,
           backgroundColor: theme.bg,
           borderColor: theme.border,
-          opacity: disabled ? 0.45 : pressed ? 0.82 : 1,
+          opacity: disabled ? 0.45 : pressed ? 0.9 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.92 : 1 }],
         },
         style,
       ]}>
@@ -79,5 +81,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+  },
+  surfaceShadow: {
+    ...shadow.sm,
   },
 });

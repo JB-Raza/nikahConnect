@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientHeader from '@/components/gradient-header';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { resolveMatchChatId } from '@/features/alerts/match-alert';
+import { hapticSelection } from '@/features/haptics';
 import { likers, matches, type Liker, type Match } from '@/features/likes/data';
 import { usePremium } from '@/features/premium/premium-context';
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -23,6 +26,15 @@ export default function LikesScreen() {
   const { showAlert, showToast, showMatch } = useAlert();
   const [segment, setSegment] = useState<Segment>('likes');
   const [matchList, setMatchList] = useState<Match[]>(matches);
+
+  const segmentIndex = segment === 'likes' ? 0 : 1;
+  const [trackWidth, setTrackWidth] = useState(0);
+  const thumbWidth = trackWidth > 0 ? (trackWidth - 8) / 2 : 0;
+  const thumbX = useSharedValue(0);
+  useEffect(() => {
+    thumbX.value = withTiming(segmentIndex * thumbWidth, { duration: 220 });
+  }, [segmentIndex, thumbWidth, thumbX]);
+  const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: thumbX.value }] }));
 
   const confirmUnmatch = (match: Match) =>
     showAlert({
@@ -53,23 +65,32 @@ export default function LikesScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.header}>
-        <Pressable onPress={dismiss} hitSlop={8} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={26} color={palette.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Connections</Text>
-        <View style={styles.backButton} />
-      </View>
-
-      <View style={styles.segmentRow}>
-        <SegmentTab label={`Likes ${likers.length}`} active={segment === 'likes'} onPress={() => setSegment('likes')} />
-        <SegmentTab label={`Matches ${matchList.length}`} active={segment === 'matches'} onPress={() => setSegment('matches')} />
-      </View>
+    <View style={styles.screen}>
+      <GradientHeader title="Connections" onBack={dismiss} align="center">
+        <View style={styles.segmentRow} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}>
+          {thumbWidth > 0 ? <Animated.View style={[styles.segmentThumb, { width: thumbWidth }, thumbStyle]} /> : null}
+          <SegmentTab
+            label={`Likes ${likers.length}`}
+            active={segment === 'likes'}
+            onPress={() => {
+              hapticSelection();
+              setSegment('likes');
+            }}
+          />
+          <SegmentTab
+            label={`Matches ${matchList.length}`}
+            active={segment === 'matches'}
+            onPress={() => {
+              hapticSelection();
+              setSegment('matches');
+            }}
+          />
+        </View>
+      </GradientHeader>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.xxl }}>
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.xxl }}>
         {segment === 'likes' ? (
           <>
             {!isPremium ? (
@@ -132,7 +153,7 @@ export default function LikesScreen() {
 
 function SegmentTab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <Pressable style={[styles.segmentTab, active && styles.segmentTabActive]} onPress={onPress}>
+    <Pressable style={styles.segmentTab} onPress={onPress}>
       <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>{label}</Text>
     </Pressable>
   );
@@ -256,32 +277,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: typography.titleMd,
-    fontWeight: '800',
-    color: palette.textPrimary,
-  },
   segmentRow: {
     flexDirection: 'row',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: palette.chipSurfaceSoft,
+    marginTop: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: radius.pill,
     padding: 4,
-    gap: 4,
+  },
+  segmentThumb: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    bottom: 4,
+    borderRadius: radius.pill,
+    backgroundColor: palette.surface,
+    shadowColor: '#0c1712',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   segmentTab: {
     flex: 1,
@@ -290,21 +304,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  segmentTabActive: {
-    backgroundColor: palette.surface,
-    shadowColor: '#0c1712',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
   segmentLabel: {
     fontSize: typography.body,
     fontWeight: '700',
-    color: palette.textSecondary,
+    color: 'rgba(255,255,255,0.88)',
   },
   segmentLabelActive: {
-    color: palette.textPrimary,
+    color: palette.primary,
   },
   unlockBanner: {
     flexDirection: 'row',

@@ -24,7 +24,7 @@ import PickerSheet from '@/features/onboarding/picker-sheet';
 import { ROW_LABEL, SECTION_BY_ROW, SECTIONS, STEP_BY_KEY } from '@/features/onboarding/sections';
 import StepBody from '@/features/onboarding/step-body';
 import { useUserProfile } from '@/features/profile/user-profile-context';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -362,5 +362,5 @@ const styles = StyleSheet.create({
     borderTopColor: palette.border,
     backgroundColor: palette.background,
   },
-  finishButton: { minHeight: sizing.buttonHeight, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  finishButton: { alignSelf: 'stretch' },
 });

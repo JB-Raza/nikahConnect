@@ -6,22 +6,29 @@ import {
   BottomSheetTextInput,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
   Pressable,
-  ScrollView,
   Share,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
@@ -30,10 +37,11 @@ import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { resolveMatchChatId } from '@/features/alerts/match-alert';
+import { hapticImpact } from '@/features/haptics';
 import { useProfileFilters } from '@/features/filters/use-profile-filters';
 import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { profiles as mockProfiles } from '@/features/profiles/data';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, gradients, radius, sizing, spacing, typography } from '@/theme/theme';
 
 const SUPER_LIKE_COLOR = '#2f9bed';
 
@@ -51,6 +59,7 @@ const palette = colors.light;
 export default function MarriageTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const { width, height } = useWindowDimensions();
   const { showAlert, showToast, showMatch } = useAlert();
 
@@ -81,7 +90,16 @@ export default function MarriageTabScreen() {
   const heroHeight = Math.round(height * 0.68);
   const stickyBottomOffset = insets.bottom + spacing.lg;
   const headerTopPadding = insets.top + spacing.xs;
+  const headerHeight = headerTopPadding + sizing.iconButtonSize + spacing.xs;
   const complimentIsValid = composerText.trim().length >= 10;
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const headerBackgroundStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, heroHeight * 0.32, heroHeight * 0.55], [0, 0.65, 1], Extrapolation.CLAMP),
+  }));
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -129,6 +147,7 @@ export default function MarriageTabScreen() {
     if (!currentProfile) {
       return;
     }
+    hapticImpact();
     const isMatch = recordLike(currentProfile);
     const profileId = currentProfile.id;
     const name = currentProfile.name;
@@ -147,6 +166,7 @@ export default function MarriageTabScreen() {
     if (!currentProfile) {
       return;
     }
+    hapticImpact();
     const name = currentProfile.name;
     const isMatch = recordLike(currentProfile);
     const profileId = currentProfile.id;
@@ -218,6 +238,7 @@ export default function MarriageTabScreen() {
     if (!complimentIsValid || !currentProfile) {
       return;
     }
+    hapticImpact();
     recordCompliment(currentProfile);
     consumeCurrentProfile();
     complimentSheetRef.current?.dismiss();
@@ -246,14 +267,15 @@ export default function MarriageTabScreen() {
           />
         ) : null}
         {activeCount > 0 ? (
-          <Pressable
-            style={[styles.ghostReloadButton, { borderColor: palette.border }]}
+          <GradientButton
+            label="Reload profiles"
+            variant="outline"
+            style={styles.reloadButton}
             onPress={() => {
               resetDeck();
               setHeroImageIndex(0);
-            }}>
-            <Text style={[styles.reloadButtonText, { color: palette.textPrimary }]}>Reload profiles</Text>
-          </Pressable>
+            }}
+          />
         ) : (
           <GradientButton
             label="Reload profiles"
@@ -270,8 +292,19 @@ export default function MarriageTabScreen() {
 
   return (
     <>
-    <StatusBar style="dark" translucent={true} backgroundColor="rgba(0, 0, 0, 0.5)" />
+    {isFocused ? <StatusBar translucent backgroundColor="transparent" barStyle="light-content" /> : null}
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <Animated.View
+        style={[styles.headerBackground, { height: headerHeight }, headerBackgroundStyle]}
+        pointerEvents="none">
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
       <View style={[styles.header, { paddingTop: headerTopPadding }]} pointerEvents="box-none">
         <View style={styles.headerLeft}>
           <FilterButton />
@@ -288,10 +321,12 @@ export default function MarriageTabScreen() {
         </View>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         contentContainerStyle={{
           paddingBottom: stickyBottomOffset + sizing.stickyActionHeight + spacing.xl,
         }}>
@@ -344,6 +379,7 @@ export default function MarriageTabScreen() {
           </View>
         </View>
 
+        <View style={styles.sheet}>
         <Section title="Your Similarities">
           <CompatibilityBar score={currentProfile.compatibility} />
           {currentProfile.similarities.map((item) => (
@@ -431,22 +467,27 @@ export default function MarriageTabScreen() {
             <FooterAction label="Report user" icon="flag-outline" onPress={handleReport} />
           </View>
         </Section>
-      </ScrollView>
+        </View>
+      </Animated.ScrollView>
 
       <View style={[styles.stickyActions, { bottom: stickyBottomOffset }]} pointerEvents="box-none">
-        <CircleAction icon="close" backgroundColor="#ffffff" iconColor={palette.danger} size={54} onPress={handlePass} />
-        <CircleAction icon="star" backgroundColor="#ffffff" iconColor={SUPER_LIKE_COLOR} size={54} onPress={handleSuperLike} />
-        <CircleAction icon="checkmark" backgroundColor={palette.success} iconColor="#ffffff" size={64} onPress={handleLike} />
-        <CircleAction
-          icon="sparkles"
-          backgroundColor={palette.warning}
-          iconColor="#ffffff"
-          size={54}
-          onPress={() => {
-            setComposerText(inlineCompliment);
-            openComplimentSheet();
-          }}
-        />
+        <View style={styles.actionDockShadow}>
+          <BlurView intensity={32} tint="light" style={styles.actionDock}>
+            <CircleAction icon="close" backgroundColor="#ffffff" iconColor={palette.danger} size={54} onPress={handlePass} />
+            <CircleAction icon="star" backgroundColor="#ffffff" iconColor={SUPER_LIKE_COLOR} size={54} onPress={handleSuperLike} />
+            <CircleAction icon="checkmark" backgroundColor={palette.success} iconColor="#ffffff" size={64} onPress={handleLike} />
+            <CircleAction
+              icon="sparkles"
+              backgroundColor={palette.warning}
+              iconColor="#ffffff"
+              size={54}
+              onPress={() => {
+                setComposerText(inlineCompliment);
+                openComplimentSheet();
+              }}
+            />
+          </BlurView>
+        </View>
       </View>
 
       <BottomSheetModal
@@ -568,8 +609,11 @@ function HeaderIconButton({
 
 function Section({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
   return (
-    <View style={[styles.section, !last && styles.sectionDivider]}>
-      <Text style={[styles.sectionTitle, { color: palette.textPrimary }]}>{title}</Text>
+    <View style={[styles.section, last && styles.sectionLast]}>
+      <View style={styles.sectionTitleRow}>
+        <View style={styles.sectionAccent} />
+        <Text style={[styles.sectionTitle, { color: palette.textPrimary }]}>{title}</Text>
+      </View>
       {children}
     </View>
   );
@@ -577,16 +621,16 @@ function Section({ title, children, last }: { title: string; children: React.Rea
 
 function HeroChip({ text }: { text: string }) {
   return (
-    <View style={styles.heroChip}>
+    <BlurView intensity={18} tint="dark" style={styles.heroChip}>
       <Text style={styles.heroChipText}>{text}</Text>
-    </View>
+    </BlurView>
   );
 }
 
 function SoftChip({ text }: { text: string }) {
   return (
-    <View style={[styles.softChip, { borderColor: palette.border, backgroundColor: palette.chipSurfaceSoft }]}>
-      <Text style={[styles.softChipText, { color: palette.textPrimary }]}>{text}</Text>
+    <View style={styles.softChip}>
+      <Text style={styles.softChipText}>{text}</Text>
     </View>
   );
 }
@@ -660,6 +704,19 @@ function CircleAction({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+    zIndex: 20,
+    shadowColor: '#0c3d6b',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   header: {
     position: 'absolute',
@@ -758,7 +815,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xxl + spacing.md,
     gap: spacing.sm,
   },
   identityRow: {
@@ -769,12 +826,19 @@ const styles = StyleSheet.create({
   identityName: {
     fontSize: typography.title,
     fontWeight: '800',
+    letterSpacing: -0.5,
     color: '#ffffff',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   identityAge: {
     fontSize: typography.titleMd,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.92)',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   verifiedBadge: {
     flexDirection: 'row',
@@ -796,8 +860,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   heroChip: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden',
+    borderColor: 'rgba(255,255,255,0.28)',
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
@@ -810,18 +874,48 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
   },
-  section: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
+  sheet: {
+    marginTop: -spacing.xl,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    backgroundColor: palette.background,
+    borderTopLeftRadius: radius.xl + spacing.xxs,
+    borderTopRightRadius: radius.xl + spacing.xxs,
+    gap: spacing.md,
   },
-  sectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+  section: {
+    backgroundColor: palette.cardSurface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.cardBorder,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    shadowColor: '#0c3d6b',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  sectionLast: {
+    marginBottom: spacing.xs,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xxs,
+  },
+  sectionAccent: {
+    width: 3,
+    height: typography.subtitle,
+    borderRadius: radius.pill,
+    backgroundColor: palette.primary,
   },
   sectionTitle: {
     fontSize: typography.subtitle,
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
   bodyText: {
     fontSize: typography.body,
@@ -834,15 +928,18 @@ const styles = StyleSheet.create({
   },
   softChip: {
     borderWidth: 1,
+    borderColor: 'rgba(36,134,224,0.18)',
+    backgroundColor: palette.chipSurfaceSoft,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: spacing.xxl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   softChipText: {
     fontSize: typography.caption,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: palette.primaryPressed,
   },
   factRow: {
     flexDirection: 'row',
@@ -854,10 +951,12 @@ const styles = StyleSheet.create({
   factLabel: {
     fontSize: typography.caption,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   factValue: {
     fontSize: typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'right',
     flex: 1,
   },
@@ -876,8 +975,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     minHeight: spacing.xxl * 3,
-    padding: spacing.sm,
+    padding: spacing.md,
     fontSize: typography.body,
+    backgroundColor: palette.chipSurfaceSoft,
   },
   footerActions: {
     gap: spacing.xs,
@@ -890,6 +990,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    backgroundColor: palette.chipSurfaceSoft,
   },
   footerActionText: {
     fontSize: typography.body,
@@ -902,8 +1003,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.lg,
     zIndex: 40,
+  },
+  actionDockShadow: {
+    borderRadius: radius.pill,
+    shadowColor: '#0c3d6b',
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  actionDock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
   },
   circleAction: {
     alignItems: 'center',
@@ -916,38 +1036,22 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     paddingHorizontal: spacing.xl,
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
     gap: spacing.md,
   },
   emptyTitle: {
     fontSize: typography.titleMd,
     fontWeight: '700',
+    textAlign: 'center',
   },
   emptyBody: {
     fontSize: typography.body,
     textAlign: 'center',
   },
   reloadButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
     alignSelf: 'stretch',
-  },
-  ghostReloadButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    alignSelf: 'stretch',
-  },
-  reloadButtonText: {
-    fontSize: typography.button,
-    fontWeight: '700',
+    width: '100%',
   },
   sheetContent: {
     paddingHorizontal: spacing.lg,
