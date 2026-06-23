@@ -2,9 +2,10 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
@@ -287,15 +288,12 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable
+          <GradientButton
+            label="Finish setup"
             onPress={handleFinishPress}
-            disabled={loading}
-            style={({ pressed }) => [
-              styles.finishButton,
-              { backgroundColor: loading ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
-            ]}>
-            {loading ? <ActivityIndicator color={palette.textOnPrimary} /> : <Text style={styles.finishText}>Finish setup</Text>}
-          </Pressable>
+            loading={loading}
+            style={styles.finishButton}
+          />
         </View>
       </KeyboardAvoidingView>
 
@@ -365,5 +363,4 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   finishButton: { minHeight: sizing.buttonHeight, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  finishText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
 });

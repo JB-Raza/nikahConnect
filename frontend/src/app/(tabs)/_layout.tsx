@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRef } from 'react';
 import {
   Animated,
@@ -128,8 +129,19 @@ type TabIconProps = {
 };
 
 function TabIcon({ focused, color, icon }: TabIconProps) {
+  if (focused) {
+    return (
+      <LinearGradient
+        colors={['rgba(36, 134, 224, 0.22)', 'rgba(36, 134, 224, 0.05)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={[styles.iconWrap, styles.iconWrapActive]}>
+        <Ionicons name={icon} size={20} color={color} />
+      </LinearGradient>
+    );
+  }
   return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+    <View style={styles.iconWrap}>
       <Ionicons name={icon} size={20} color={color} />
     </View>
   );
@@ -150,9 +162,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   iconWrapActive: {
-    backgroundColor: 'rgba(36, 134, 224, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(36, 134, 224, 0.18)',
   },
   shadow: {
     shadowColor: '#0c1712',

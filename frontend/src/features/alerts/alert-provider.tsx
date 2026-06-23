@@ -385,6 +385,9 @@ export default function AlertProvider({ children }: { children: React.ReactNode 
         enableDynamicSizing
         maxDynamicContentSize={SHEET_MAX_HEIGHT}
         enablePanDownToClose
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         backdropComponent={renderBackdrop}
         handleIndicatorStyle={styles.sheetHandleIndicator}
         backgroundStyle={styles.sheetBackground}

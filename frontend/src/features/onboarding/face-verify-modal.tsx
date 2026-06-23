@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
 import { verifyFaces } from '@/features/verification/face-match';
@@ -109,10 +110,7 @@ export default function FaceVerifyModal({ visible, photos, onRemovePhoto, onVeri
             </Text>
 
             <View style={styles.actions}>
-              <Pressable style={styles.primaryButton} onPress={captureSelfie}>
-                <Ionicons name="camera" size={20} color={palette.textOnPrimary} />
-                <Text style={styles.primaryButtonText}>Open front camera</Text>
-              </Pressable>
+              <GradientButton label="Open front camera" icon="camera" onPress={captureSelfie} />
               <Pressable style={styles.secondaryButton} onPress={() => runCheck('simulated://selfie')}>
                 <Text style={styles.secondaryButtonText}>Simulate check (no camera)</Text>
               </Pressable>
@@ -136,9 +134,7 @@ export default function FaceVerifyModal({ visible, photos, onRemovePhoto, onVeri
             <Text style={styles.title}>You&apos;re verified</Text>
             <Text style={styles.subtitle}>Your face matched your photos. Finishing up your profile…</Text>
             <View style={styles.actions}>
-              <Pressable style={styles.primaryButton} onPress={onVerified}>
-                <Text style={styles.primaryButtonText}>Continue</Text>
-              </Pressable>
+              <GradientButton label="Continue" onPress={onVerified} />
             </View>
           </View>
         ) : null}
@@ -167,9 +163,7 @@ export default function FaceVerifyModal({ visible, photos, onRemovePhoto, onVeri
 
             <View style={styles.actions}>
               {canContinue ? (
-                <Pressable style={styles.primaryButton} onPress={onVerified}>
-                  <Text style={styles.primaryButtonText}>Continue</Text>
-                </Pressable>
+                <GradientButton label="Continue" onPress={onVerified} />
               ) : (
                 <Pressable style={styles.secondaryButton} onPress={() => setPhase('intro')}>
                   <Text style={styles.secondaryButtonText}>Try again</Text>
@@ -230,16 +224,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actions: { alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.md },
-  primaryButton: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
   secondaryButton: {
     minHeight: sizing.buttonHeight,
     borderRadius: radius.md,

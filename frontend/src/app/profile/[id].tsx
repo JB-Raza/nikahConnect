@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -11,13 +11,13 @@ import {
   Share,
   StyleSheet,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { resolveMatchChatId } from '@/features/alerts/match-alert';
@@ -279,11 +279,14 @@ export default function ProfileDetailScreen() {
         snapPoints={complimentSnapPoints}
         backdropComponent={renderBackdrop}
         enablePanDownToClose
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         handleIndicatorStyle={{ backgroundColor: palette.border }}
         backgroundStyle={{ backgroundColor: palette.surface }}>
         <BottomSheetScrollView contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
           <Text style={styles.sheetTitle}>Compliment {profile.name}</Text>
-          <TextInput
+          <BottomSheetTextInput
             style={styles.complimentComposer}
             placeholder="Write at least 10 characters..."
             placeholderTextColor={palette.textSecondary}
@@ -294,12 +297,12 @@ export default function ProfileDetailScreen() {
             textAlignVertical="top"
           />
           <Text style={styles.counterText}>{composerText.trim().length}/{MIN_COMPLIMENT_LENGTH} min</Text>
-          <Pressable
-            style={[styles.primaryAction, { backgroundColor: complimentIsValid ? palette.primary : palette.tabBarInactive }]}
+          <GradientButton
+            label="Send Compliment"
             disabled={!complimentIsValid}
-            onPress={handleSendCompliment}>
-            <Text style={styles.primaryActionText}>Send Compliment</Text>
-          </Pressable>
+            onPress={handleSendCompliment}
+            style={styles.primaryAction}
+          />
         </BottomSheetScrollView>
       </BottomSheetModal>
     </View>
@@ -632,15 +635,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   primaryAction: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: spacing.xs,
-  },
-  primaryActionText: {
-    fontSize: typography.button,
-    fontWeight: '700',
-    color: '#ffffff',
   },
 });

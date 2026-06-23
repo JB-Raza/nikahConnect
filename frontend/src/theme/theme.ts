@@ -55,6 +55,12 @@ export const colors = {
   },
 } as const;
 
+export const gradients = {
+  /** Subtle vertical brand gradient (lighter top → base) for a soft 3D button/tab look. */
+  primary: ['#3d99ee', '#1c74cb'] as const,
+  primaryPressed: ['#2f8ae0', '#155a9e'] as const,
+} as const;
+
 export const spacing = {
   xxs: 4,
   xs: 8,

@@ -73,7 +73,10 @@ export default function EditProfileFieldScreen() {
         </View>
       ) : null}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
         <View style={styles.card}>
           {options.length > 0 ? (
             options.map((option, index) => {

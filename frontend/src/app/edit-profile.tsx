@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import GradientButton from '@/components/gradient-button';
 import ProfilePhotoGrid from '@/components/profile-photo-grid';
 import { SettingsScaffold, settingsPalette } from '@/components/settings-kit';
 import { useAlert } from '@/features/alerts/alert-provider';
@@ -120,9 +121,7 @@ export default function EditProfileScreen() {
     <SettingsScaffold
       title="Edit profile"
       footer={
-        <Pressable onPress={save} style={({ pressed }) => [styles.saveButton, pressed && { opacity: 0.9 }]}>
-          <Text style={styles.saveLabel}>Save changes</Text>
-        </Pressable>
+        <GradientButton label="Save changes" onPress={save} style={styles.saveButton} />
       }>
       <View style={styles.scroll}>
         <Section title="Photos">
@@ -301,11 +300,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: typography.caption, fontWeight: '600', color: palette.textSecondary },
   chipTextActive: { color: palette.textOnPrimary },
   saveButton: {
-    height: 52,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'stretch',
   },
-  saveLabel: { fontSize: typography.button, fontWeight: '700', color: palette.textOnPrimary },
 });

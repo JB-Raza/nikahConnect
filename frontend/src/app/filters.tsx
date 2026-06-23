@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import RangeSlider from '@/components/range-slider';
 import {
   AGE_MAX,
@@ -80,9 +81,7 @@ export default function FiltersScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        <Pressable style={[styles.applyButton, { backgroundColor: palette.primary }]} onPress={handleApply}>
-          <Text style={styles.applyButtonText}>Apply</Text>
-        </Pressable>
+        <GradientButton label="Apply" onPress={handleApply} style={styles.applyButton} />
       </View>
     </View>
   );
@@ -415,14 +414,6 @@ const styles = StyleSheet.create({
     borderTopColor: palette.border,
   },
   applyButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  applyButtonText: {
-    fontSize: typography.button,
-    fontWeight: '700',
-    color: palette.textOnPrimary,
+    alignSelf: 'stretch',
   },
 });

@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { capturePhoto } from '@/features/media/camera';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -87,9 +88,7 @@ export default function VerificationScreen() {
               <Ionicons name="camera-reverse-outline" size={18} color={palette.primary} />
               <Text style={styles.ghostButtonText}>Retake selfie</Text>
             </Pressable>
-            <Pressable style={styles.primaryButton} onPress={dismiss}>
-              <Text style={styles.primaryButtonText}>Done</Text>
-            </Pressable>
+            <GradientButton label="Done" onPress={dismiss} style={styles.primaryButton} />
           </View>
         ) : (
           <>
@@ -122,10 +121,7 @@ export default function VerificationScreen() {
 
       {!selfieUri ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable style={styles.primaryButton} onPress={takeSelfie}>
-            <Ionicons name="camera" size={18} color={palette.textOnPrimary} />
-            <Text style={styles.primaryButtonText}>Take a selfie</Text>
-          </Pressable>
+          <GradientButton label="Take a selfie" icon="camera" onPress={takeSelfie} style={styles.primaryButton} />
         </View>
       ) : null}
     </View>
@@ -210,17 +206,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   primaryButton: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.primary,
     alignSelf: 'stretch',
-    paddingHorizontal: spacing.xl,
   },
-  primaryButtonText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
   ghostButton: {
     flexDirection: 'row',
     gap: spacing.xs,

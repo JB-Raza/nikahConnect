@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import GradientButton from '@/components/gradient-button';
+import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -50,9 +51,7 @@ export default function ReportScreen() {
             Thank you for helping keep NikahConnect safe. Our team will review your report confidentially and take
             action if our guidelines were broken.
           </Text>
-          <Pressable style={styles.primaryButton} onPress={dismiss}>
-            <Text style={styles.primaryButtonText}>Done</Text>
-          </Pressable>
+          <GradientButton label="Done" onPress={dismiss} />
         </View>
       </View>
     );
@@ -110,15 +109,7 @@ export default function ReportScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable
-            onPress={() => reason && setSubmitted(true)}
-            disabled={!reason}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              { backgroundColor: !reason ? palette.tabBarInactive : pressed ? palette.primaryPressed : palette.primary },
-            ]}>
-            <Text style={styles.primaryButtonText}>Submit report</Text>
-          </Pressable>
+          <GradientButton label="Submit report" onPress={() => setSubmitted(true)} disabled={!reason} />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -197,15 +188,6 @@ const styles = StyleSheet.create({
     borderTopColor: palette.border,
     backgroundColor: palette.background,
   },
-  primaryButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.primary,
-    paddingHorizontal: spacing.xl,
-  },
-  primaryButtonText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
   successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.sm },
   successIcon: { marginBottom: spacing.xs },
   successTitle: { fontSize: typography.title, fontWeight: '800', color: palette.textPrimary, textAlign: 'center' },

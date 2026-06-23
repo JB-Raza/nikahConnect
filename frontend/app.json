@@ -4,7 +4,7 @@
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/app-icon.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "android": {
@@ -17,7 +17,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/app-icon.png"
     },
     "plugins": [
       "expo-router",
@@ -28,6 +28,13 @@
             "minSdkVersion": 26,
             "outputImageName": "Nikah Connect"
           }
+        }
+      ],
+      [
+        "expo-status-bar",
+        {
+          "hidden": false,
+          "style": "dark"
         }
       ],
       [
@@ -54,7 +61,7 @@
         {
           "photosPermission": "NikahConnect accesses your photos so you can set your profile picture.",
           "cameraPermission": "NikahConnect uses your camera so you can take a profile picture.",
-          "microphonePermission": false
+          "microphonePermission": "Nikah Connect uses your microphone so you can send voice messages."
         }
       ],
       [

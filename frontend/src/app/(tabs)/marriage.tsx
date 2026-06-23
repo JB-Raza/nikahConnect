@@ -3,6 +3,7 @@ import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
+  BottomSheetTextInput,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
@@ -20,10 +21,12 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CompatibilityBar from '@/components/compatibility-bar';
 import FilterButton from '@/components/filter-button';
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { useAlert } from '@/features/alerts/alert-provider';
 import { resolveMatchChatId } from '@/features/alerts/match-alert';
@@ -233,37 +236,41 @@ export default function MarriageTabScreen() {
             : 'Come back later for new proposals.'}
         </Text>
         {activeCount > 0 ? (
-          <Pressable
-            style={[styles.reloadButton, { backgroundColor: palette.primary }]}
+          <GradientButton
+            label="Clear filters"
+            style={styles.reloadButton}
             onPress={() => {
               clearAllFilters();
               setHeroImageIndex(0);
-            }}>
-            <Text style={[styles.reloadButtonText, { color: palette.textOnPrimary }]}>Clear filters</Text>
-          </Pressable>
+            }}
+          />
         ) : null}
-        <Pressable
-          style={[
-            activeCount > 0 ? styles.ghostReloadButton : styles.reloadButton,
-            activeCount > 0 ? { borderColor: palette.border } : { backgroundColor: palette.primary },
-          ]}
-          onPress={() => {
-            resetDeck();
-            setHeroImageIndex(0);
-          }}>
-          <Text
-            style={[
-              styles.reloadButtonText,
-              { color: activeCount > 0 ? palette.textPrimary : palette.textOnPrimary },
-            ]}>
-            Reload profiles
-          </Text>
-        </Pressable>
+        {activeCount > 0 ? (
+          <Pressable
+            style={[styles.ghostReloadButton, { borderColor: palette.border }]}
+            onPress={() => {
+              resetDeck();
+              setHeroImageIndex(0);
+            }}>
+            <Text style={[styles.reloadButtonText, { color: palette.textPrimary }]}>Reload profiles</Text>
+          </Pressable>
+        ) : (
+          <GradientButton
+            label="Reload profiles"
+            style={styles.reloadButton}
+            onPress={() => {
+              resetDeck();
+              setHeroImageIndex(0);
+            }}
+          />
+        )}
       </View>
     );
   }
 
   return (
+    <>
+    <StatusBar style="dark" translucent={true} backgroundColor="rgba(0, 0, 0, 0.5)" />
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <View style={[styles.header, { paddingTop: headerTopPadding }]} pointerEvents="box-none">
         <View style={styles.headerLeft}>
@@ -283,6 +290,8 @@ export default function MarriageTabScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={{
           paddingBottom: stickyBottomOffset + sizing.stickyActionHeight + spacing.xl,
         }}>
@@ -461,15 +470,12 @@ export default function MarriageTabScreen() {
             );
           })}
           <View style={styles.sheetFooterActions}>
-            <Pressable
-              style={[
-                styles.primaryAction,
-                { backgroundColor: selectedSorts.length > 0 ? palette.primary : palette.tabBarInactive },
-              ]}
+            <GradientButton
+              label="Apply"
+              style={styles.primaryAction}
               disabled={selectedSorts.length === 0}
-              onPress={applySort}>
-              <Text style={[styles.primaryActionText, { color: palette.textOnPrimary }]}>Apply</Text>
-            </Pressable>
+              onPress={applySort}
+            />
           </View>
         </BottomSheetScrollView>
       </BottomSheetModal>
@@ -479,11 +485,14 @@ export default function MarriageTabScreen() {
         snapPoints={complimentSnapPoints}
         backdropComponent={renderBackdrop}
         enablePanDownToClose
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         handleIndicatorStyle={{ backgroundColor: palette.border }}
         backgroundStyle={{ backgroundColor: palette.surface }}>
         <BottomSheetScrollView contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
           <Text style={[styles.sheetTitle, { color: palette.textPrimary }]}>Send a Compliment</Text>
-          <TextInput
+          <BottomSheetTextInput
             style={[styles.complimentComposer, { borderColor: palette.border, color: palette.textPrimary }]}
             placeholder="Write at least 10 characters..."
             placeholderTextColor={palette.textSecondary}
@@ -494,15 +503,12 @@ export default function MarriageTabScreen() {
             textAlignVertical="top"
           />
           <Text style={[styles.counterText, { color: palette.textSecondary }]}>{composerText.trim().length}/10 min</Text>
-          <Pressable
-            style={[
-              styles.primaryAction,
-              { backgroundColor: complimentIsValid ? palette.primary : palette.tabBarInactive },
-            ]}
+          <GradientButton
+            label="Send Compliment"
+            style={styles.primaryAction}
             disabled={!complimentIsValid}
-            onPress={handleSendCompliment}>
-            <Text style={[styles.primaryActionText, { color: palette.textOnPrimary }]}>Send Compliment</Text>
-          </Pressable>
+            onPress={handleSendCompliment}
+          />
           <Pressable
             style={[styles.ghostButton, { borderColor: palette.border }]}
             onPress={() => complimentSheetRef.current?.dismiss()}>
@@ -511,6 +517,7 @@ export default function MarriageTabScreen() {
         </BottomSheetScrollView>
       </BottomSheetModal>
     </View>
+    </>
   );
 }
 
@@ -979,16 +986,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   primaryAction: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
     flex: 1,
-  },
-  primaryActionText: {
-    fontSize: typography.button,
-    fontWeight: '700',
   },
   ghostButton: {
     minHeight: sizing.buttonHeight,

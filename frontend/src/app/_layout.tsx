@@ -12,6 +12,7 @@ import ProfileActionsProvider from '@/features/profile/profile-actions-context';
 import UserProfileProvider from '@/features/profile/user-profile-context';
 import PremiumProvider from '@/features/premium/premium-context';
 
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

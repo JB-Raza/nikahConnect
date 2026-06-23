@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import { usePremium } from '@/features/premium/premium-context';
 import { getPlan } from '@/features/premium/plans';
 import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
@@ -65,9 +65,7 @@ export default function CheckoutScreen() {
         <Text style={styles.successBody}>
           Your {plan.label} plan is active. You can now see who likes you and enjoy every Premium feature.
         </Text>
-        <Pressable style={styles.cta} onPress={() => router.replace('/likes')}>
-          <Text style={styles.ctaText}>See who likes you</Text>
-        </Pressable>
+        <GradientButton label="See who likes you" onPress={() => router.replace('/likes')} style={styles.cta} />
         <Pressable style={styles.ghost} onPress={() => router.replace('/(tabs)/marriage')}>
           <Text style={styles.ghostText}>Back to browsing</Text>
         </Pressable>
@@ -140,12 +138,13 @@ export default function CheckoutScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable
+          <GradientButton
+            label={`Pay ${plan.price}`}
             onPress={pay}
-            disabled={!isValid || loading}
-            style={[styles.cta, { backgroundColor: !isValid || loading ? palette.tabBarInactive : palette.primary }]}>
-            {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.ctaText}>Pay {plan.price}</Text>}
-          </Pressable>
+            disabled={!isValid}
+            loading={loading}
+            style={styles.cta}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -305,17 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   cta: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     alignSelf: 'stretch',
-  },
-  ctaText: {
-    fontSize: typography.button,
-    fontWeight: '800',
-    color: palette.textOnPrimary,
   },
   successScreen: {
     alignItems: 'center',

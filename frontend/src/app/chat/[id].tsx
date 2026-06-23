@@ -24,6 +24,7 @@ import {
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
@@ -31,7 +32,7 @@ import { useChats } from '@/features/chat/chat-context';
 import { getChatThread, type ChatMessage } from '@/features/chat/data';
 import { useProfileActions } from '@/features/profile/profile-actions-context';
 import { getProfileById } from '@/features/profiles/data';
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -79,9 +80,7 @@ export default function ChatThreadScreen() {
     return (
       <View style={[styles.screen, styles.centered, { backgroundColor: palette.background, paddingTop: insets.top }]}>
         <Text style={styles.missingText}>This conversation is unavailable.</Text>
-        <Pressable style={[styles.missingButton, { backgroundColor: palette.primary }]} onPress={dismiss}>
-          <Text style={styles.missingButtonText}>Go back</Text>
-        </Pressable>
+        <GradientButton label="Go back" onPress={dismiss} />
       </View>
     );
   }
@@ -439,18 +438,6 @@ const styles = StyleSheet.create({
   missingText: {
     fontSize: typography.body,
     color: palette.textSecondary,
-  },
-  missingButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  missingButtonText: {
-    fontSize: typography.button,
-    fontWeight: '700',
-    color: palette.textOnPrimary,
   },
   header: {
     flexDirection: 'row',

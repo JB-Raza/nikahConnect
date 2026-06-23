@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import VerifiedStar from '@/components/verified-star';
 import { useAlert } from '@/features/alerts/alert-provider';
@@ -187,12 +188,12 @@ export default function MenuTabScreen() {
             </View>
           </View>
 
-          <Pressable
+          <GradientButton
+            label="View my profile"
+            icon="eye-outline"
             onPress={() => router.push(`/profile/${user.id}`)}
-            style={({ pressed }) => [styles.viewProfileButton, pressed && { opacity: 0.9 }]}>
-            <Ionicons name="eye-outline" size={18} color={palette.textOnPrimary} />
-            <Text style={styles.viewProfileLabel}>View my profile</Text>
-          </Pressable>
+            style={styles.viewProfileButton}
+          />
         </View>
 
         <Pressable
@@ -480,18 +481,6 @@ const styles = StyleSheet.create({
   viewProfileButton: {
     alignSelf: 'stretch',
     marginTop: spacing.md,
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  viewProfileLabel: {
-    fontSize: typography.button,
-    fontWeight: '700',
-    color: palette.textOnPrimary,
   },
   premiumCard: {
     flexDirection: 'row',

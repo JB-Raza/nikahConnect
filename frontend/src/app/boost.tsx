@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import GradientButton from '@/components/gradient-button';
+import { colors, radius, spacing, typography } from '@/theme/theme';
 
 const palette = colors.light;
 
@@ -82,10 +83,13 @@ export default function BoostScreen() {
           })}
         </View>
 
-        <Pressable style={styles.cta} onPress={boostNow} disabled={boosting}>
-          <Ionicons name="flash" size={18} color="#ffffff" />
-          <Text style={styles.ctaText}>{boosting ? 'Boosting…' : `Boost now · ${pack.price}`}</Text>
-        </Pressable>
+        <GradientButton
+          label={boosting ? 'Boosting…' : `Boost now · ${pack.price}`}
+          icon="flash"
+          onPress={boostNow}
+          disabled={boosting}
+          style={styles.cta}
+        />
 
         <Pressable style={styles.premiumLink} onPress={() => router.replace('/premium')}>
           <Ionicons name="diamond" size={14} color={palette.premiumAccent} />
@@ -192,19 +196,7 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
   },
   cta: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     alignSelf: 'stretch',
-  },
-  ctaText: {
-    fontSize: typography.button,
-    fontWeight: '800',
-    color: palette.textOnPrimary,
   },
   premiumLink: {
     flexDirection: 'row',

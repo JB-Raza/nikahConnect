@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing, typography } from '@/theme/theme';
@@ -39,12 +40,13 @@ export function SettingsScaffold({ title, children, footer, fallback = '/(tabs)/
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        bottomOffset={spacing.xl}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {footer ? <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>{footer}</View> : null}
     </View>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import GradientButton from '@/components/gradient-button';
 import IconCircleButton from '@/components/icon-circle-button';
 import { usePremium, type PlanId } from '@/features/premium/premium-context';
 import { PLANS, PREMIUM_BENEFITS, getPlan, type PremiumBenefit } from '@/features/premium/plans';
@@ -92,14 +93,14 @@ export default function PremiumScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         {isPremium ? (
-          <Pressable style={styles.cta} onPress={dismiss}>
-            <Text style={styles.ctaText}>Done</Text>
-          </Pressable>
+          <GradientButton label="Done" onPress={dismiss} style={styles.cta} />
         ) : (
           <>
-            <Pressable style={styles.cta} onPress={() => router.push({ pathname: '/premium/checkout', params: { plan: selected } })}>
-              <Text style={styles.ctaText}>Continue · {getPlan(selected).price}</Text>
-            </Pressable>
+            <GradientButton
+              label={`Continue · ${getPlan(selected).price}`}
+              onPress={() => router.push({ pathname: '/premium/checkout', params: { plan: selected } })}
+              style={styles.cta}
+            />
             <Text style={styles.fineprint}>Recurring billing. Cancel anytime. Terms apply.</Text>
           </>
         )}
@@ -284,16 +285,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   cta: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaText: {
-    fontSize: typography.button,
-    fontWeight: '800',
-    color: palette.textOnPrimary,
+    alignSelf: 'stretch',
   },
   fineprint: {
     fontSize: typography.label,

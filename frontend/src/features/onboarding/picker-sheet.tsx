@@ -7,10 +7,11 @@ import {
   type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
 import { forwardRef, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, sizing, spacing, typography } from '@/theme/theme';
+import GradientButton from '@/components/gradient-button';
+import { colors, sizing, spacing, typography } from '@/theme/theme';
 
 import { type OnboardingForm, type Step } from './config';
 import StepBody from './step-body';
@@ -57,9 +58,7 @@ const PickerSheet = forwardRef<BottomSheetModal, PickerSheetProps>(function Pick
       showDone ? (
         <BottomSheetFooter {...props} bottomInset={0}>
           <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-            <Pressable style={({ pressed }) => [styles.doneButton, pressed && styles.donePressed]} onPress={onDone}>
-              <Text style={styles.doneText}>Done</Text>
-            </Pressable>
+            <GradientButton label="Done" onPress={onDone} style={styles.doneButton} />
           </View>
         </BottomSheetFooter>
       ) : null,
@@ -121,12 +120,6 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
   },
   doneButton: {
-    minHeight: sizing.buttonHeight,
-    borderRadius: radius.md,
-    backgroundColor: palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'stretch',
   },
-  donePressed: { backgroundColor: palette.primaryPressed },
-  doneText: { fontSize: typography.button, fontWeight: '800', color: palette.textOnPrimary },
 });
